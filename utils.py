@@ -130,13 +130,13 @@ def openai_completion(
     return completions
 
 
-def _make_w_io_base(f, mode: str):
-    if not isinstance(f, io.IOBase):
-        f_dirname = os.path.dirname(f)
-        if f_dirname != "":
-            os.makedirs(f_dirname, exist_ok=True)
-        f = open(f, mode=mode)
-    return f
+def _make_w_io_base(file_path, mode: str):
+    if not isinstance(file_path, io.IOBase):
+        file_dirname = os.path.dirname(file_path)
+        if file_dirname != "":
+            os.makedirs(file_dirname, exist_ok=True)
+        file_path = open(file_path, mode=mode)
+    return file_path
 
 
 def _make_r_io_base(f, mode: str):
@@ -145,29 +145,29 @@ def _make_r_io_base(f, mode: str):
     return f
 
 
-def jdump(obj, f, mode="w", indent=4, default=str):
+def jdump(obj, file_path, mode="w", indent=4, default=str):
     """Dump a str or dictionary to a file in json format.
 
     Args:
         obj: An object to be written.
-        f: A string path to the location on disk.
+        file_path: A string path to the location on disk.
         mode: Mode for opening the file.
         indent: Indent for storing json dictionaries.
         default: A function to handle non-serializable entries; defaults to `str`.
     """
-    f = _make_w_io_base(f, mode)
+    file_path = _make_w_io_base(file_path, mode)
     if isinstance(obj, (dict, list)):
-        json.dump(obj, f, indent=indent, default=default)
+        json.dump(obj, file_path, indent=indent, default=default)
     elif isinstance(obj, str):
-        f.write(obj)
+        file_path.write(obj)
     else:
         raise ValueError(f"Unexpected type: {type(obj)}")
-    f.close()
+    file_path.close()
 
 
-def jload(f, mode="r"):
+def jload(file_path, mode="r"):
     """Load a .json file into a dictionary."""
-    f = _make_r_io_base(f, mode)
-    jdict = json.load(f)
-    f.close()
+    file_path = _make_r_io_base(file_path, mode)
+    jdict = json.load(file_path)
+    file_path.close()
     return jdict

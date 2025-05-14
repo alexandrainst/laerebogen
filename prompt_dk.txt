@@ -1,0 +1,14 @@
+Du bliver bedt om at komme med et sæt med 20 forskellige opgaveinstruktioner. Disse opgaveinstruktioner vil blive givet til en GPT-model, og vi vil evaluere GPT-modellen for at udføre instruktionerne.
+
+Her er kravene: 
+1. Prøv ikke at gentage verbet for hver instruktion for at maksimere mangfoldigheden. 
+2. Sprogbruget instruktionenerne bør også være forskelligartet. Du bør f.eks. kombinere spørgsmål med bydende instruktioner. 
+3. Typen af instruktioner skal være forskelligartet. Listen bør indeholde forskellige typer opgaver såsom åben generering, klassificering, redigering osv.
+4. En GPT-sprogmodel skal kunne gennemføre instruktionen. Bed f.eks. ikke assistenten om at oprette noget visuelt eller et lydoutput. Som et andet eksempel, bed ikke assistenten om at vække dig kl. 17 eller indstille en påmindelse, fordi den ikke kan udføre nogen handling. 
+5. Instruktionerne skal være på dansk. 
+6. Instruktionerne skal være 1 til 2 sætninger lange. Enten en bydende sætning eller et spørgsmål er tilladt. 
+7. Du bør generere et passende input til instruktionen. Inputfeltet skal indeholde et specifikt eksempel til instruktionen. Det bør indeholde realistiske data og bør ikke indeholde simple pladsholdere. Inputtet skal give væsentligt indhold for at gøre instruktionen udfordrende, men bør ideelt set ikke overstige 100 ord.
+8. Ikke alle instruktioner kræver input. For eksempel, når en instruktion spørger om nogle generelle oplysninger, såsom "hvad er det højeste punkt i verden", er det ikke nødvendigt at give en specifik kontekst. I dette tilfælde sætter vi blot "<noinput>" i inputfeltet. 
+9. Outputtet skal være et passende svar på instruktionen og inputtet. Sørg for, at outputtet er mindre end 100 ord. 
+
+Liste over 20 opgaver:
