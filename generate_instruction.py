@@ -19,7 +19,7 @@ from multiprocessing import Pool
 import numpy as np
 import tqdm
 from rouge_score import rouge_scorer
-import utils
+import utils_minimal as utils
 
 import fire
 
@@ -32,24 +32,25 @@ def encode_prompt(prompt_instructions):
         (instruction, input, output) = task_dict["instruction"], task_dict["input"], task_dict["output"]
         instruction = re.sub(r"\s+", " ", instruction).strip().rstrip(":")
         input = "<noinput>" if input.lower() == "" else input
-        prompt += f"###\n"
+        prompt += "###\n"
         prompt += f"{idx + 1}. Instruktion: {instruction}\n"
         prompt += f"{idx + 1}. Input:\n{input}\n"
         prompt += f"{idx + 1}. Output:\n{output}\n"
-    prompt += f"###\n"
+    prompt += "###\n"
     prompt += f"{idx + 2}. Instruktion:"
     return prompt
 
 
-def post_process_gpt3_response(num_prompt_instructions, response):
+def post_process_response(num_prompt_instructions, response):
     if response is None:
         return []
-    raw_instructions = f"{num_prompt_instructions+1}. Instruktion:" + response["text"]
+    raw_instructions = f"{num_prompt_instructions+1}. Instruktion:" + response.text
     raw_instructions = re.split("###", raw_instructions)
     instructions = []
+    
     for idx, inst in enumerate(raw_instructions):
         # if the decoding stops due to length, the last example is likely truncated so we discard it
-        if idx == len(raw_instructions) - 1 and response["finish_reason"] == "length":
+        if idx == len(raw_instructions) - 1 and response.finish_reason == "length":
             continue
         idx += num_prompt_instructions + 1
         splitted_data = re.split(f"{idx}\.\s+(Instruktion|Input|Output):", inst)
@@ -111,7 +112,7 @@ def generate_instruction_following_data(
     output_dir="./",
     seed_tasks_path="./seed_tasks.jsonl",
     num_instructions_to_generate=100,
-    model_name="text-davinci-003",
+    model_name="gpt-4o-mini",
     num_prompt_instructions=3,
     request_batch_size=5,
     temperature=1.0,
@@ -138,6 +139,7 @@ def generate_instruction_following_data(
         top_p (float): Top-p parameter for sampling.
         num_cpus (int): Number of CPU cores to use for parallel processing.
     """
+    
     seed_tasks = [json.loads(task) for task in open(seed_tasks_path, "r")]
     seed_instruction_data = [
         {"instruction": t["instruction"], "input": t["instances"][0]["input"], "output": t["instances"][0]["output"]}
@@ -176,7 +178,8 @@ def generate_instruction_following_data(
             prompt_instructions = random.sample(seed_instruction_data, num_prompt_instructions)
             prompt = encode_prompt(prompt_instructions)
             batch_inputs.append(prompt)
-        decoding_args = utils.OpenAIDecodingArguments(
+            
+        decoding_args = utils.DecodingArguments(
             temperature=temperature,
             n=1,
             max_tokens=3072,  # hard-code to maximize the length. the requests will be automatically adjusted
@@ -184,7 +187,7 @@ def generate_instruction_following_data(
             stop=["\n20", "20.", "20."],
         )
         request_start = time.time()
-        results = utils.openai_completion(
+        results = utils.LLM_completion(
             prompts=batch_inputs,
             model_name=model_name,
             batch_size=request_batch_size,
@@ -196,7 +199,7 @@ def generate_instruction_following_data(
         process_start = time.time()
         instruction_data = []
         for result in results:
-            new_instructions = post_process_gpt3_response(num_prompt_instructions, result)
+            new_instructions = post_process_response(num_prompt_instructions, result['choice'])
             instruction_data += new_instructions
 
         total = len(instruction_data)

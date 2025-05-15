@@ -7,13 +7,13 @@ import sys
 import time
 import json
 from typing import Optional, Sequence, Union
+from typing import Any
 
 import openai
 import tqdm
-from openai import openai_object
 import copy
 
-StrOrOpenAIObject = Union[str, openai_object.OpenAIObject]
+StrOrOpenAIObject = Union[str, Any]
 
 openai_org = os.getenv("OPENAI_ORG")
 if openai_org is not None:
@@ -22,7 +22,7 @@ if openai_org is not None:
 
 
 @dataclasses.dataclass
-class OpenAIDecodingArguments(object):
+class DecodingArguments(object):
     max_tokens: int = 1800
     temperature: float = 0.2
     top_p: float = 1.0
@@ -36,9 +36,9 @@ class OpenAIDecodingArguments(object):
     echo: bool = False
 
 
-def openai_completion(
+def LLM_completion(
     prompts: Union[str, Sequence[str], Sequence[dict[str, str]], dict[str, str]],
-    decoding_args: OpenAIDecodingArguments,
+    decoding_args: DecodingArguments,
     model_name="text-davinci-003",
     sleep_time=2,
     batch_size=1,
@@ -47,7 +47,7 @@ def openai_completion(
     return_text=False,
     **decoding_kwargs,
 ) -> Union[Union[StrOrOpenAIObject], Sequence[StrOrOpenAIObject], Sequence[Sequence[StrOrOpenAIObject]],]:
-    """Decode with OpenAI API.
+    """Decode with an LLM.
 
     Args:
         prompts: A string or a list of strings to complete. If it is a chat model the strings should be formatted
@@ -103,21 +103,29 @@ def openai_completion(
                     **batch_decoding_args.__dict__,
                     **decoding_kwargs,
                 )
-                completion_batch = openai.Completion.create(prompt=prompt_batch, **shared_kwargs)
-                choices = completion_batch.choices
+                
+                choices:list[dict] = []
+                for prompt_batch_i in prompt_batch:
+                    completion_batch = openai.completions.create(prompt=prompt_batch_i, **shared_kwargs)
+                    choice = completion_batch.choices[0]
+                    total_tokens = completion_batch.usage.total_tokens
+                    choices.append({"choice":choice,"total_tokens":total_tokens})
 
-                for choice in choices:
-                    choice["total_tokens"] = completion_batch.usage.total_tokens
                 completions.extend(choices)
                 break
-            except openai.error.OpenAIError as e:
+            except (openai.InternalServerError,openai.APIError,openai.APIConnectionError,openai.RateLimitError,openai.RateLimitError,openai.APITimeoutError ) as e:
                 logging.warning(f"OpenAIError: {e}.")
                 if "Please reduce your prompt" in str(e):
                     batch_decoding_args.max_tokens = int(batch_decoding_args.max_tokens * 0.8)
                     logging.warning(f"Reducing target length to {batch_decoding_args.max_tokens}, Retrying...")
                 else:
-                    logging.warning("Hit request rate limit; retrying...")
+                    logging.warning("An OpenAI error occured. Retrying...")
                     time.sleep(sleep_time)  # Annoying rate limit on requests.
+            except Exception as e:
+                print (f"\nAn unexpected error occurred:\n{e}")
+                print ("Retrying...")
+                time.sleep(sleep_time)  # Annoying rate limit on requests.
+
 
     if return_text:
         completions = [completion.text for completion in completions]
