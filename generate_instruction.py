@@ -7,6 +7,7 @@ python -m generate_instruction generate_instruction_following_data \
   --num_instructions_to_generate 10 \
   --model_name="text-davinci-003" \
 """
+
 import time
 import json
 import os
@@ -29,7 +30,11 @@ def encode_prompt(prompt_instructions):
     prompt = open("./prompt.txt").read() + "\n"
 
     for idx, task_dict in enumerate(prompt_instructions):
-        (instruction, input, output) = task_dict["instruction"], task_dict["input"], task_dict["output"]
+        (instruction, input, output) = (
+            task_dict["instruction"],
+            task_dict["input"],
+            task_dict["output"],
+        )
         instruction = re.sub(r"\s+", " ", instruction).strip().rstrip(":")
         input = "<noinput>" if input.lower() == "" else input
         prompt += "###\n"
@@ -44,10 +49,12 @@ def encode_prompt(prompt_instructions):
 def post_process_response(num_prompt_instructions, response):
     if response is None:
         return []
-    raw_instructions = f"{num_prompt_instructions+1}. Instruktion:" + response.response
+    raw_instructions = (
+        f"{num_prompt_instructions + 1}. Instruktion:" + response.response
+    )
     raw_instructions = re.split("###", raw_instructions)
     instructions = []
-    
+
     for idx, inst in enumerate(raw_instructions):
         # if the decoding stops due to length, the last example is likely truncated so we discard it
         if idx == len(raw_instructions) - 1 and response.done_reason == "length":
@@ -85,6 +92,21 @@ def post_process_response(num_prompt_instructions, response):
             "flowchart",
             "diagram",
         ]
+        blacklist += [
+            "billede",
+            "billeder",
+            "graf",
+            "grafer",
+            "foto",
+            "fotos",
+            "fil",
+            "filer",
+            "illustrer",
+            "illustration",
+            "tegning",
+            "gå til",
+            "musik",
+        ]
         blacklist += []
         if any(find_word_in_string(word, inst) for word in blacklist):
             continue
@@ -112,14 +134,14 @@ def generate_instruction_following_data(
     output_dir="./",
     seed_tasks_path="./seed_tasks.jsonl",
     num_instructions_to_generate=100,
-    model_name='llama3.1:70b-text-q8_0',
+    model_name="llama3.1:70b-text-q8_0",
     num_prompt_instructions=3,
     request_batch_size=5,
     temperature=1.0,
     top_p=1.0,
     num_cpus=16,
 ):
-    """ Generate instructions following the seed tasks using OpenAI's GPT-3.5-turbo model.
+    """Generate instructions following the seed tasks using OpenAI's GPT-3.5-turbo model.
 
     Generates num_instructions_to_generate instruction tasks.
 
@@ -139,10 +161,14 @@ def generate_instruction_following_data(
         top_p (float): Top-p parameter for sampling.
         num_cpus (int): Number of CPU cores to use for parallel processing.
     """
-    
+
     seed_tasks = [json.loads(task) for task in open(seed_tasks_path, "r")]
     seed_instruction_data = [
-        {"instruction": t["instruction"], "input": t["instances"][0]["input"], "output": t["instances"][0]["output"]}
+        {
+            "instruction": t["instruction"],
+            "input": t["instances"][0]["input"],
+            "output": t["instances"][0]["output"],
+        }
         for t in seed_tasks
     ]
     print(f"Loaded {len(seed_instruction_data)} human-written seed instructions")
@@ -167,7 +193,9 @@ def generate_instruction_following_data(
     all_instructions = [d["instruction"] for d in seed_instruction_data] + [
         d["instruction"] for d in machine_instruction_data
     ]
-    all_instruction_tokens = [scorer._tokenizer.tokenize(inst) for inst in all_instructions]
+    all_instruction_tokens = [
+        scorer._tokenizer.tokenize(inst) for inst in all_instructions
+    ]
 
     while len(machine_instruction_data) < num_instructions_to_generate:
         request_idx += 1
@@ -175,10 +203,12 @@ def generate_instruction_following_data(
         batch_inputs = []
         for _ in range(request_batch_size):
             # only sampling from the seed tasks
-            prompt_instructions = random.sample(seed_instruction_data, num_prompt_instructions)
+            prompt_instructions = random.sample(
+                seed_instruction_data, num_prompt_instructions
+            )
             prompt = encode_prompt(prompt_instructions)
             batch_inputs.append(prompt)
-            
+
         decoding_args = utils.DecodingArguments(
             temperature=temperature,
             n=1,
@@ -192,7 +222,9 @@ def generate_instruction_following_data(
             model_name=model_name,
             batch_size=request_batch_size,
             decoding_args=decoding_args,
-            logit_bias={"50256": -100},  # prevent the <|endoftext|> token from being generated
+            logit_bias={
+                "50256": -100
+            },  # prevent the <|endoftext|> token from being generated
         )
         request_duration = time.time() - request_start
 
@@ -206,7 +238,9 @@ def generate_instruction_following_data(
         keep = 0
         for instruction_data_entry in instruction_data:
             # computing similarity with the pre-tokenzied instructions
-            new_instruction_tokens = scorer._tokenizer.tokenize(instruction_data_entry["instruction"])
+            new_instruction_tokens = scorer._tokenizer.tokenize(
+                instruction_data_entry["instruction"]
+            )
             with Pool(num_cpus) as p:
                 rouge_scores = p.map(
                     partial(rouge_scorer._score_lcs, new_instruction_tokens),
@@ -214,20 +248,27 @@ def generate_instruction_following_data(
                 )
             rouge_scores = [score.fmeasure for score in rouge_scores]
             most_similar_instructions = {
-                all_instructions[i]: rouge_scores[i] for i in np.argsort(rouge_scores)[-10:][::-1]
+                all_instructions[i]: rouge_scores[i]
+                for i in np.argsort(rouge_scores)[-10:][::-1]
             }
             if max(rouge_scores) > 0.7:
                 continue
             else:
                 keep += 1
-            instruction_data_entry["most_similar_instructions"] = most_similar_instructions
-            instruction_data_entry["avg_similarity_score"] = float(np.mean(rouge_scores))
+            instruction_data_entry["most_similar_instructions"] = (
+                most_similar_instructions
+            )
+            instruction_data_entry["avg_similarity_score"] = float(
+                np.mean(rouge_scores)
+            )
             machine_instruction_data.append(instruction_data_entry)
             all_instructions.append(instruction_data_entry["instruction"])
             all_instruction_tokens.append(new_instruction_tokens)
             progress_bar.update(1)
         process_duration = time.time() - process_start
-        print(f"Request {request_idx} took {request_duration:.2f}s, processing took {process_duration:.2f}s")
+        print(
+            f"Request {request_idx} took {request_duration:.2f}s, processing took {process_duration:.2f}s"
+        )
         print(f"Generated {total} instructions, kept {keep} instructions")
         utils.jdump(machine_instruction_data, os.path.join(output_dir, "regen.json"))
 

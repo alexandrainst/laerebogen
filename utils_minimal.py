@@ -9,12 +9,13 @@ import json
 from typing import Optional, Sequence, Union
 from typing import Any
 
-#import openai
+# import openai
 import tqdm
 import copy
 import ollama
 
 StrOrOpenAIObject = Union[str, Any]
+
 
 @dataclasses.dataclass
 class DecodingArguments(object):
@@ -41,7 +42,11 @@ def LLM_completion(
     max_batches=sys.maxsize,
     return_text=False,
     **decoding_kwargs,
-) -> Union[Union[StrOrOpenAIObject], Sequence[StrOrOpenAIObject], Sequence[Sequence[StrOrOpenAIObject]],]:
+) -> Union[
+    Union[StrOrOpenAIObject],
+    Sequence[StrOrOpenAIObject],
+    Sequence[Sequence[StrOrOpenAIObject]],
+]:
     """Decode with an LLM.
 
     Args:
@@ -98,13 +103,15 @@ def LLM_completion(
                     **batch_decoding_args.__dict__,
                     **decoding_kwargs,
                 )
-                
-                choices:list[dict] = []
+
+                choices: list[dict] = []
                 for prompt_batch_i in prompt_batch:
-                    completion_batch = ollama.generate(model='llama3.1:8b-text-q8_0',prompt=prompt_batch_i)
-                    #choice = completion_batch.choices[0]
-                    #total_tokens = completion_batch.usage.total_tokens
-                    #choices.append({"choice":choice,"total_tokens":total_tokens})
+                    completion_batch = ollama.generate(
+                        model="llama3.1:8b-text-q8_0", prompt=prompt_batch_i
+                    )
+                    # choice = completion_batch.choices[0]
+                    # total_tokens = completion_batch.usage.total_tokens
+                    # choices.append({"choice":choice,"total_tokens":total_tokens})
                     choices.append(completion_batch)
 
                 completions.extend(choices)
@@ -112,22 +119,28 @@ def LLM_completion(
             except ollama.ResponseError as e:
                 logging.warning(f"Ollama ResponseError: {e}.")
                 if "Please reduce your prompt" in str(e):
-                    batch_decoding_args.max_tokens = int(batch_decoding_args.max_tokens * 0.8)
-                    logging.warning(f"Reducing target length to {batch_decoding_args.max_tokens}, Retrying...")
+                    batch_decoding_args.max_tokens = int(
+                        batch_decoding_args.max_tokens * 0.8
+                    )
+                    logging.warning(
+                        f"Reducing target length to {batch_decoding_args.max_tokens}, Retrying..."
+                    )
                 else:
                     logging.warning("An Ollama error occured. Retrying...")
                     time.sleep(sleep_time)  # Annoying rate limit on requests.
             except Exception as e:
-                print (f"\nAn unexpected error occurred:\n{e}")
-                print ("Retrying...")
+                print(f"\nAn unexpected error occurred:\n{e}")
+                print("Retrying...")
                 time.sleep(sleep_time)  # Annoying rate limit on requests.
-
 
     if return_text:
         completions = [completion.response for completion in completions]
     if decoding_args.n > 1:
         # make completions a nested list, where each entry is a consecutive decoding_args.n of original entries.
-        completions = [completions[i : i + decoding_args.n] for i in range(0, len(completions), decoding_args.n)]
+        completions = [
+            completions[i : i + decoding_args.n]
+            for i in range(0, len(completions), decoding_args.n)
+        ]
     if is_single_prompt:
         # Return non-tuple if only 1 input and 1 generation.
         (completions,) = completions
