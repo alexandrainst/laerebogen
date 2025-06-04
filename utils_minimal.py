@@ -16,7 +16,7 @@ import ollama
 
 StrOrOpenAIObject = Union[str, Any]
 
-
+#TODO: Consider deleting this
 @dataclasses.dataclass
 class DecodingArguments(object):
     max_tokens: int = 1800
