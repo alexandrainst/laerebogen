@@ -35,13 +35,12 @@ class DecodingArguments(object):
 def LLM_completion(
     prompts: Union[str, Sequence[str], Sequence[dict[str, str]], dict[str, str]],
     decoding_args: DecodingArguments,
-    model_name="text-davinci-003",
+    model_name="llama3.1:8b-text-q8_0",
     sleep_time=2,
     batch_size=1,
     max_instances=sys.maxsize,
     max_batches=sys.maxsize,
     return_text=False,
-    **decoding_kwargs,
 ) -> Union[
     Union[StrOrOpenAIObject],
     Sequence[StrOrOpenAIObject],
@@ -89,7 +88,7 @@ def LLM_completion(
     ]
 
     completions = []
-    for batch_id, prompt_batch in tqdm.tqdm(
+    for prompt_batch in tqdm.tqdm(
         enumerate(prompt_batches),
         desc="prompt_batches",
         total=len(prompt_batches),
@@ -98,26 +97,18 @@ def LLM_completion(
 
         while True:
             try:
-                shared_kwargs = dict(
-                    model=model_name,
-                    **batch_decoding_args.__dict__,
-                    **decoding_kwargs,
-                )
-
                 choices: list[dict] = []
                 for prompt_batch_i in prompt_batch:
                     completion_batch = ollama.generate(
-                        model="llama3.1:8b-text-q8_0", prompt=prompt_batch_i
+                        model=model_name, prompt=prompt_batch_i
                     )
-                    # choice = completion_batch.choices[0]
-                    # total_tokens = completion_batch.usage.total_tokens
-                    # choices.append({"choice":choice,"total_tokens":total_tokens})
                     choices.append(completion_batch)
 
                 completions.extend(choices)
                 break
             except ollama.ResponseError as e:
                 logging.warning(f"Ollama ResponseError: {e}.")
+                # TODO: Adapt this to Ollama that has different arguments.
                 if "Please reduce your prompt" in str(e):
                     batch_decoding_args.max_tokens = int(
                         batch_decoding_args.max_tokens * 0.8
