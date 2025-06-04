@@ -44,13 +44,13 @@ def encode_prompt(prompt_instructions):
 def post_process_response(num_prompt_instructions, response):
     if response is None:
         return []
-    raw_instructions = f"{num_prompt_instructions+1}. Instruktion:" + response.text
+    raw_instructions = f"{num_prompt_instructions+1}. Instruktion:" + response.response
     raw_instructions = re.split("###", raw_instructions)
     instructions = []
     
     for idx, inst in enumerate(raw_instructions):
         # if the decoding stops due to length, the last example is likely truncated so we discard it
-        if idx == len(raw_instructions) - 1 and response.finish_reason == "length":
+        if idx == len(raw_instructions) - 1 and response.done_reason == "length":
             continue
         idx += num_prompt_instructions + 1
         splitted_data = re.split(f"{idx}\.\s+(Instruktion|Input|Output):", inst)
@@ -112,7 +112,7 @@ def generate_instruction_following_data(
     output_dir="./",
     seed_tasks_path="./seed_tasks.jsonl",
     num_instructions_to_generate=100,
-    model_name="gpt-4o-mini",
+    model_name='llama3.1:70b-text-q8_0',
     num_prompt_instructions=3,
     request_batch_size=5,
     temperature=1.0,
@@ -199,7 +199,7 @@ def generate_instruction_following_data(
         process_start = time.time()
         instruction_data = []
         for result in results:
-            new_instructions = post_process_response(num_prompt_instructions, result['choice'])
+            new_instructions = post_process_response(num_prompt_instructions, result)
             instruction_data += new_instructions
 
         total = len(instruction_data)

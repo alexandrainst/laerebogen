@@ -9,17 +9,12 @@ import json
 from typing import Optional, Sequence, Union
 from typing import Any
 
-import openai
+#import openai
 import tqdm
 import copy
+import ollama
 
 StrOrOpenAIObject = Union[str, Any]
-
-openai_org = os.getenv("OPENAI_ORG")
-if openai_org is not None:
-    openai.organization = openai_org
-    logging.warning(f"Switching to organization: {openai_org} for OAI API key.")
-
 
 @dataclasses.dataclass
 class DecodingArguments(object):
@@ -106,20 +101,21 @@ def LLM_completion(
                 
                 choices:list[dict] = []
                 for prompt_batch_i in prompt_batch:
-                    completion_batch = openai.completions.create(prompt=prompt_batch_i, **shared_kwargs)
-                    choice = completion_batch.choices[0]
-                    total_tokens = completion_batch.usage.total_tokens
-                    choices.append({"choice":choice,"total_tokens":total_tokens})
+                    completion_batch = ollama.generate(model='llama3.1:8b-text-q8_0',prompt=prompt_batch_i)
+                    #choice = completion_batch.choices[0]
+                    #total_tokens = completion_batch.usage.total_tokens
+                    #choices.append({"choice":choice,"total_tokens":total_tokens})
+                    choices.append(completion_batch)
 
                 completions.extend(choices)
                 break
-            except (openai.InternalServerError,openai.APIError,openai.APIConnectionError,openai.RateLimitError,openai.RateLimitError,openai.APITimeoutError ) as e:
-                logging.warning(f"OpenAIError: {e}.")
+            except ollama.ResponseError as e:
+                logging.warning(f"Ollama ResponseError: {e}.")
                 if "Please reduce your prompt" in str(e):
                     batch_decoding_args.max_tokens = int(batch_decoding_args.max_tokens * 0.8)
                     logging.warning(f"Reducing target length to {batch_decoding_args.max_tokens}, Retrying...")
                 else:
-                    logging.warning("An OpenAI error occured. Retrying...")
+                    logging.warning("An Ollama error occured. Retrying...")
                     time.sleep(sleep_time)  # Annoying rate limit on requests.
             except Exception as e:
                 print (f"\nAn unexpected error occurred:\n{e}")
@@ -128,7 +124,7 @@ def LLM_completion(
 
 
     if return_text:
-        completions = [completion.text for completion in completions]
+        completions = [completion.response for completion in completions]
     if decoding_args.n > 1:
         # make completions a nested list, where each entry is a consecutive decoding_args.n of original entries.
         completions = [completions[i : i + decoding_args.n] for i in range(0, len(completions), decoding_args.n)]
