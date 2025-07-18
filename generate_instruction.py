@@ -4,8 +4,9 @@ batch_selfinstruct_generate.py
 run:
 python -m generate_instruction generate_instruction_following_data \
   --output_dir ./ \
+  --seed_tasks_path="./seed_tasks_da.jsonl"
   --num_instructions_to_generate 10 \
-  --model_name="text-davinci-003" \
+  --model_name="llama3.1:70b-text-q8_0" \
 """
 
 import time
@@ -222,9 +223,9 @@ def generate_instruction_following_data(
             model_name=model_name,
             batch_size=request_batch_size,
             decoding_args=decoding_args,
-            logit_bias={
-                "50256": -100
-            },  # prevent the <|endoftext|> token from being generated
+            #logit_bias={
+            #    "50256": -100
+            #},  # prevent the <|endoftext|> token from being generated
         )
         request_duration = time.time() - request_start
 
