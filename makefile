@@ -26,6 +26,11 @@ SHELL := /bin/bash
 help:
 	@grep -E '^[0-9a-zA-Z_-]+:.*?## .*$$' makefile | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
+dataset: ## Generate the dataset
+	@echo "Generating the dataset..."
+	uv run src/scripts/generate_dataset.py
+	@echo "Dataset generated successfully!"
+
 install: ## Install dependencies
 	@echo "Installing the 'alpaka' project..."
 	@$(MAKE) --quiet install-uv

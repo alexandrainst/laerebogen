@@ -1,7 +1,7 @@
 """Generate the dataset.
 
 Usage:
-    python generate.py \
+    python generate_dataset.py \
         [--output-dir <output_dir>] \
         [--seed-tasks-path <seed_tasks_path>] \
         [--num-instructions-to-generate <num_instructions>] \
@@ -15,7 +15,7 @@ import logging
 
 import click
 
-from alpaka.generate_instruction import generate_instruction_following_data
+from alpaka.generation import generate_instruction_following_data
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
