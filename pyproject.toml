@@ -10,7 +10,6 @@ authors = [
 requires-python = ">=3.11,<4.0"
 dependencies = [
     "click>=8.2.1",
-    "fire>=0.7.0",
     "numpy>=2.3.2",
     "ollama>=0.5.1",
     "rouge-score>=0.1.2",
