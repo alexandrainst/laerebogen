@@ -200,7 +200,7 @@ def encode_prompt(seed_instructions: list[InstructionSample]) -> str:
 
 
 def post_process_response(
-    num_prompt_instructions: int, response: ollama.GenerateResponse
+    num_prompt_instructions: int, response: "ollama.GenerateResponse"
 ) -> list[InstructionSample]:
     """Post-process the response from the model to extract instructions.
 
