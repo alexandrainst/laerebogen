@@ -1,0 +1,118 @@
+[project]
+name = "alpaka"
+version = "0.0.0"
+description = "Generation of a Danish instruction dataset."
+readme = "README.md"
+authors = [
+    {name = "Sofie Helene Bruun", email = "sofie.bruun@alexandra.dk"},
+    {name = "Dan Saattrup Smart", email = "dan.smart@alexandra.dk"},
+]
+requires-python = ">=3.11,<4.0"
+dependencies = [
+    "click>=8.2.1",
+    "fire>=0.7.0",
+    "numpy>=2.3.2",
+    "ollama>=0.5.1",
+    "rouge-score>=0.1.2",
+    "tqdm>=4.67.1",
+]
+
+[project.urls]
+Repository = "https://github.com/alexandrainst/alpaka"
+Issues = "https://github.com/alexandrainst/alpaka/issues"
+
+[project.license]
+file = "LICENSE"
+
+[tool.uv]
+dev-dependencies = [
+    "pre-commit>=3.8.0",
+    "ruff>=0.7.1",
+    "mypy>=1.13.0",
+    "pip>=24.3.1",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+]
+extend-include = [
+    "*.ipynb",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = [
+    # isort (imports)
+    "I",
+    # pydocstyle (docstrings)
+    "D",
+    # pycodestyle errors and warnings (PEP8)
+    "E",
+    "W",
+    # flake-annotations (type hints)
+    "ANN",
+    # Pyflakes
+    "F",
+]
+ignore = [
+    # Type annotations for "self" arguments
+    "ANN101",
+    # Type annotations for "cls" arguments
+    "ANN102",
+    # Type annotations for **kwargs
+    "ANN003",
+    # Docstrings for **kwargs
+    "D417",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = [
+    "F401",
+]
+"src/scripts/main.py" = [
+    "I",
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    '--cov=src/alpaka',
+    '--color=yes',
+]
+xfail_strict = true
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+    "ignore::ImportWarning",
+    "ignore::ResourceWarning",
+    "ignore::FutureWarning",
+]
+log_cli_level = "info"
+testpaths = [
+    "tests",
+    "src/alpaka",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
