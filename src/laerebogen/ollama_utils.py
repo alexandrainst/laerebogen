@@ -2,6 +2,7 @@
 
 import logging
 import math
+import sys
 import time
 
 import ollama
@@ -36,35 +37,38 @@ def generate_text_with_ollama(
     ]
 
     completions: list[ollama.GenerateResponse] = []
-    for prompt_batch in tqdm(
-        prompt_batches, desc="prompt_batches", total=len(prompt_batches)
-    ):
-        while True:
-            try:
-                batch_completions: list[ollama.GenerateResponse] = []
-                for prompt_batch_i in prompt_batch:
-                    completion_batch = ollama.generate(
-                        model=model_name,
-                        prompt=prompt_batch_i,
-                        options=ollama.Options(
-                            num_batch=1,
-                            num_ctx=3072,
-                            temperature=0.2,
-                            top_p=1.0,
-                            stop=["\n20", "20.", "20."],
-                            presence_penalty=0.0,
-                            frequency_penalty=0.0,
-                        ),
-                    )
-                    batch_completions.append(completion_batch)
-                completions.extend(batch_completions)
-                break
-            except ollama.ResponseError as e:
-                logger.warning(f"Ollama ResponseError: {e}. Retrying...")
-            except Exception as e:
-                logger.info(f"An unexpected error occurred: {e}. Retrying...")
-            finally:
-                time.sleep(2.0)
+    with tqdm(prompt_batches, desc="prompt_batches", total=len(prompt_batches)) as pbar:
+        for prompt_batch in pbar:
+            while True:
+                try:
+                    batch_completions: list[ollama.GenerateResponse] = []
+                    for prompt_batch_i in prompt_batch:
+                        completion_batch = ollama.generate(
+                            model=model_name,
+                            prompt=prompt_batch_i,
+                            options=ollama.Options(
+                                num_batch=1,
+                                num_ctx=3072,
+                                temperature=0.2,
+                                top_p=1.0,
+                                stop=["\n20", "20."],
+                                presence_penalty=0.0,
+                                frequency_penalty=0.0,
+                            ),
+                        )
+                        batch_completions.append(completion_batch)
+                    completions.extend(batch_completions)
+                    break
+                except KeyboardInterrupt:
+                    pbar.close()
+                    logger.info("Stopping generation due to keyboard interrupt.")
+                    sys.exit(0)
+                except ollama.ResponseError as e:
+                    logger.warning(f"Ollama ResponseError: {e}. Retrying...")
+                    time.sleep(2.0)
+                except Exception as e:
+                    logger.info(f"An unexpected error occurred: {e}. Retrying...")
+                    time.sleep(2.0)
 
     return completions
 
