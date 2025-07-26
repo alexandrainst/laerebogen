@@ -82,7 +82,7 @@ def generate_instruction_following_data(
         )
         for t in seed_tasks
     ]
-    logger.info(f"Loaded {len(seed_instruction_data)} human-written seed instructions")
+    logger.info(f"Loaded {len(seed_instruction_data)} human-written seed instructions.")
 
     # Load the LM-generated instructions
     machine_instruction_path = Path(output_dir, "dataset.jsonl")
