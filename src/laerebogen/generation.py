@@ -130,9 +130,7 @@ def generate_instruction_following_data(
 
         # Generate new instructions with the LLM
         request_start = time.time()
-        responses = generate_text_with_ollama(
-            prompts=batch_inputs, model_id=model_id, batch_size=request_batch_size
-        )
+        responses = generate_text_with_ollama(prompts=batch_inputs, model_id=model_id)
         request_duration = time.time() - request_start
 
         # Process the generated instructions

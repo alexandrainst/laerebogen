@@ -1,7 +1,6 @@
 """Functions related to generating text using Ollama."""
 
 import logging
-import math
 import sys
 import time
 
@@ -12,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_text_with_ollama(
-    prompts: list[str], model_id: str, batch_size: int
+    prompts: list[str], model_id: str
 ) -> list[ollama.GenerateResponse]:
     """Decode with an Ollama LLM.
 
@@ -21,52 +20,42 @@ def generate_text_with_ollama(
             A list of strings to complete.
         model_id:
             The Ollama model ID to use for generation.
-        batch_size:
-            Number of prompts to send in a single request.
 
     Returns:
         A list of ollama.GenerateResponse objects, each containing the generated text
         for the corresponding prompt.
     """
-    num_prompts = len(prompts)
-    prompt_batches = [
-        prompts[batch_id * batch_size : (batch_id + 1) * batch_size]
-        for batch_id in range(int(math.ceil(num_prompts / batch_size)))
-    ]
-
     completions: list[ollama.GenerateResponse] = []
-    with tqdm(prompt_batches, desc="prompt_batches", total=len(prompt_batches)) as pbar:
-        for prompt_batch in pbar:
-            while True:
-                try:
-                    batch_completions: list[ollama.GenerateResponse] = []
-                    for prompt_batch_i in prompt_batch:
-                        completion_batch = ollama.generate(
-                            model=model_id,
-                            prompt=prompt_batch_i,
-                            options=ollama.Options(
-                                num_batch=1,
-                                num_ctx=3072,
-                                temperature=0.2,
-                                top_p=1.0,
-                                stop=["\n20", "20."],
-                                presence_penalty=0.0,
-                                frequency_penalty=0.0,
-                            ),
-                        )
-                        batch_completions.append(completion_batch)
-                    completions.extend(batch_completions)
-                    break
-                except KeyboardInterrupt:
-                    pbar.close()
-                    logger.info("Stopping generation due to keyboard interrupt.")
-                    sys.exit(0)
-                except ollama.ResponseError as e:
-                    logger.warning(f"Ollama ResponseError: {e}. Retrying...")
-                    time.sleep(2.0)
-                except Exception as e:
-                    logger.info(f"An unexpected error occurred: {e}. Retrying...")
-                    time.sleep(2.0)
+    while True:
+        try:
+            # TODO: Do this asyncronously, to actually use the batching for something
+            batch_completions: list[ollama.GenerateResponse] = []
+            for prompt in prompts:
+                completion_batch = ollama.generate(
+                    model=model_id,
+                    prompt=prompt,
+                    options=ollama.Options(
+                        num_batch=1,
+                        num_ctx=3072,
+                        temperature=0.2,
+                        top_p=1.0,
+                        stop=["\n20", "20."],
+                        presence_penalty=0.0,
+                        frequency_penalty=0.0,
+                    ),
+                )
+                batch_completions.append(completion_batch)
+            completions.extend(batch_completions)
+            break
+        except KeyboardInterrupt:
+            logger.info("Stopping generation due to keyboard interrupt.")
+            sys.exit(0)
+        except ollama.ResponseError as e:
+            logger.warning(f"Ollama ResponseError: {e}. Retrying...")
+            time.sleep(2.0)
+        except Exception as e:
+            logger.info(f"An unexpected error occurred: {e}. Retrying...")
+            time.sleep(2.0)
 
     return completions
 
