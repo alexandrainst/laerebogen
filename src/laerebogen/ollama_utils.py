@@ -36,7 +36,7 @@ def generate_text_with_ollama(
                     prompt=prompt,
                     options=ollama.Options(
                         num_batch=1,
-                        num_ctx=3072,
+                        num_ctx=8192,
                         temperature=0.2,
                         top_p=1.0,
                         stop=["\n20", "20."],
