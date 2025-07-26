@@ -71,7 +71,7 @@ logging.basicConfig(
 @click.option(
     "--batch-size",
     type=int,
-    default=5,
+    default=1,
     show_default=True,
     help="Number of requests to send to the model at once.",
 )
