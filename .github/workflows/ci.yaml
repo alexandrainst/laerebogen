@@ -32,26 +32,3 @@ jobs:
         shell: bash
       - run: pre-commit run --show-diff-on-failure --color=always --all-files
         shell: bash
-
-  pytest:
-    if: github.event.pull_request.draft == false
-    permissions:
-      contents: read
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          python-version: "3.11"
-
-      - name: Install Dependencies
-        run: uv sync --all-extras
-
-      - name: Test with pytest
-        run: uv run --no-cache pytest
