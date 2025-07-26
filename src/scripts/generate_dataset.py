@@ -5,13 +5,14 @@ Usage:
         [--output-dir <output_dir>] \
         [--seed-tasks-path <seed_tasks_path>] \
         [--num-instructions-to-generate <num_instructions>] \
-        [--model-name <model_name>] \
+        [--model <model>] \
         [--num-prompt-instructions <num_prompt_instructions>] \
         [--request-batch-size <request_batch_size>] \
         [--num-cpus <num_cpus>]
 """
 
 import logging
+import multiprocessing as mp
 
 import click
 
@@ -45,7 +46,7 @@ logging.basicConfig(
     help="Number of instructions to generate.",
 )
 @click.option(
-    "--model-name",
+    "--model",
     type=str,
     default="llama3.1:70b-text-q8_0",
     show_default=True,
@@ -69,15 +70,16 @@ logging.basicConfig(
 @click.option(
     "--num-cpus",
     type=int,
-    default=1,
+    default=-1,
     show_default=True,
-    help="Number of CPUs to use for parallel processing.",
+    help="Number of CPUs to use for parallel processing. Set to -1 to use all "
+    "available CPUs.",
 )
 def generate(
     output_dir: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
-    model_name: str,
+    model: str,
     num_prompt_instructions: int,
     request_batch_size: int,
     num_cpus: int,
@@ -105,10 +107,10 @@ def generate(
         output_dir=output_dir,
         seed_tasks_path=seed_tasks_path,
         num_instructions_to_generate=num_instructions_to_generate,
-        model_name=model_name,
+        model_id=model,
         num_prompt_instructions=num_prompt_instructions,
         request_batch_size=request_batch_size,
-        num_cpus=num_cpus,
+        num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
     )
 
 

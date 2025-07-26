@@ -12,19 +12,17 @@ logger = logging.getLogger(__name__)
 
 
 def generate_text_with_ollama(
-    prompts: list[str], model_name: str, batch_size: int
+    prompts: list[str], model_id: str, batch_size: int
 ) -> list[ollama.GenerateResponse]:
     """Decode with an Ollama LLM.
 
     Args:
         prompts:
             A list of strings to complete.
-        decoding_args:
-            Decoding arguments.
-        model_name:
-            Model name.
+        model_id:
+            The Ollama model ID to use for generation.
         batch_size:
-            Number of prompts to send in a single request. Only for non chat model.
+            Number of prompts to send in a single request.
 
     Returns:
         A list of ollama.GenerateResponse objects, each containing the generated text
@@ -44,7 +42,7 @@ def generate_text_with_ollama(
                     batch_completions: list[ollama.GenerateResponse] = []
                     for prompt_batch_i in prompt_batch:
                         completion_batch = ollama.generate(
-                            model=model_name,
+                            model=model_id,
                             prompt=prompt_batch_i,
                             options=ollama.Options(
                                 num_batch=1,

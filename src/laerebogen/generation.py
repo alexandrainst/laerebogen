@@ -29,7 +29,7 @@ def generate_instruction_following_data(
     output_dir: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
-    model_name: str,
+    model_id: str,
     num_prompt_instructions: int,
     request_batch_size: int,
     num_cpus: int,
@@ -51,7 +51,7 @@ def generate_instruction_following_data(
             Path to the seed tasks file.
         num_instructions_to_generate:
             Number of instructions to generate.
-        model_name:
+        model_id:
             The Ollama model ID of the model to use for generation. Must be a base
             model, not a finetuned one.
         num_prompt_instructions:
@@ -62,7 +62,7 @@ def generate_instruction_following_data(
             Number of CPUs to use for parallel processing.
     """
     # Download the model, if it hasn't been downloaded yet
-    try_download_ollama_model(model_id=model_name)
+    try_download_ollama_model(model_id=model_id)
 
     # Load the seed tasks
     with Path(seed_tasks_path).open() as f:
@@ -122,7 +122,7 @@ def generate_instruction_following_data(
         # Generate new instructions with the LLM
         request_start = time.time()
         responses = generate_text_with_ollama(
-            prompts=batch_inputs, model_name=model_name, batch_size=request_batch_size
+            prompts=batch_inputs, model_id=model_id, batch_size=request_batch_size
         )
         request_duration = time.time() - request_start
 
