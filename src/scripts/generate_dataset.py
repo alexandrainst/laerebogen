@@ -49,14 +49,14 @@ logging.basicConfig(
 @click.option(
     "--num-instructions-to-generate",
     type=int,
-    default=100,
+    default=50_000,
     show_default=True,
     help="Number of instructions to generate.",
 )
 @click.option(
     "--model",
     type=str,
-    default="llama3.1:70b-text-q8_0",
+    default="llama3.1:405b-text-q8_0",
     show_default=True,
     help="The Ollama model ID of the model to use for generation. Must be a base "
     "model, not a finetuned one.",
