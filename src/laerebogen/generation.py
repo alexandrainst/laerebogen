@@ -17,7 +17,7 @@ import tqdm
 from rouge_score import rouge_scorer
 
 from .data_models import InstructionSample
-from .ollama_utils import generate_text_with_ollama
+from .ollama_utils import generate_text_with_ollama, try_download_ollama_model
 
 if t.TYPE_CHECKING:
     import ollama
@@ -62,8 +62,12 @@ def generate_instruction_following_data(
         num_cpus:
             Number of CPUs to use for parallel processing.
     """
+    # Download the model, if it hasn't been downloaded yet
+    try_download_ollama_model(model_id=model_name)
+
     with Path(seed_tasks_path).open() as f:
         seed_tasks = [json.loads(line) for line in f.readlines() if line.strip()]
+
     seed_instruction_data = [
         InstructionSample(
             instruction=t["instruction"],
