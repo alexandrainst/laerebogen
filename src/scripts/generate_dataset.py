@@ -78,7 +78,7 @@ logging.basicConfig(
 @click.option(
     "--num-cpus",
     type=int,
-    default=-1,
+    default=1,
     show_default=True,
     help="Number of CPUs to use for parallel processing. Set to -1 to use all "
     "available CPUs.",
