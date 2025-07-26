@@ -2,7 +2,6 @@
 
 import json
 import logging
-import os
 import random
 import re
 import string
@@ -65,9 +64,9 @@ def generate_instruction_following_data(
     # Download the model, if it hasn't been downloaded yet
     try_download_ollama_model(model_id=model_name)
 
+    # Load the seed tasks
     with Path(seed_tasks_path).open() as f:
         seed_tasks = [json.loads(line) for line in f.readlines() if line.strip()]
-
     seed_instruction_data = [
         InstructionSample(
             instruction=t["instruction"],
@@ -78,11 +77,9 @@ def generate_instruction_following_data(
     ]
     logger.info(f"Loaded {len(seed_instruction_data)} human-written seed instructions")
 
-    os.makedirs(output_dir, exist_ok=True)
-    request_idx = 0
-
     # Load the LM-generated instructions
     machine_instruction_path = Path(output_dir, "regen.json")
+    machine_instruction_path.parent.mkdir(parents=True, exist_ok=True)
     machine_instruction_data = []
     if machine_instruction_path.exists():
         with machine_instruction_path.open() as f:
@@ -91,14 +88,15 @@ def generate_instruction_following_data(
             f"Loaded {len(machine_instruction_data):,} machine-generated instructions."
         )
 
+    # Initialise the Rouge scorer for similarity scoring
     scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
 
-    # Now let's generate new instructions!
+    # Initialise the progress bar
     progress_bar = tqdm.tqdm(total=num_instructions_to_generate)
     if machine_instruction_data:
         progress_bar.update(len(machine_instruction_data))
 
-    # First we tokenize all the seed instructions and generated machine instructions
+    # First we tokenise all the seed instructions and generated machine instructions
     all_instructions = [
         seed_instruction.instruction for seed_instruction in seed_instruction_data
     ] + [instruction["instruction"] for instruction in machine_instruction_data]
@@ -106,9 +104,13 @@ def generate_instruction_following_data(
         scorer._tokenizer.tokenize(inst) for inst in all_instructions
     ]
 
+    # Start generating instructions
+    request_idx = 0
     while len(machine_instruction_data) < num_instructions_to_generate:
         request_idx += 1
 
+        # Randomly sample some seed instructions, that the new instructions should be
+        # based on
         batch_inputs = []
         for _ in range(request_batch_size):
             seed_instructions = random.sample(
@@ -117,12 +119,14 @@ def generate_instruction_following_data(
             prompt = encode_prompt(seed_instructions=seed_instructions)
             batch_inputs.append(prompt)
 
+        # Generate new instructions with the LLM
         request_start = time.time()
         responses = generate_text_with_ollama(
             prompts=batch_inputs, model_name=model_name, batch_size=request_batch_size
         )
         request_duration = time.time() - request_start
 
+        # Process the generated instructions
         process_start = time.time()
         instruction_data: list[InstructionSample] = []
         for response in responses:
@@ -131,10 +135,12 @@ def generate_instruction_following_data(
             )
             instruction_data += new_instructions
 
+        # Filter the generated instructions to not keep too similar ones
         total = len(instruction_data)
         keep = 0
         for instruction_data_entry in instruction_data:
-            # computing similarity with the pre-tokenzied instructions
+            # Compute the similarity of the new instruction to all existing
+            # instructions
             new_instruction_tokens = scorer._tokenizer.tokenize(
                 instruction_data_entry.instruction
             )
@@ -148,26 +154,38 @@ def generate_instruction_following_data(
                 all_instructions[i]: rouge_scores[i]
                 for i in np.argsort(rouge_scores)[-10:][::-1]
             }
+
+            # If the new instruction is too similar to existing ones, we skip it
             if max(rouge_scores) > 0.7:
                 continue
-            else:
-                keep += 1
+            keep += 1
+
+            # Store the similarity data in the instruction data entry
             instruction_data_entry.most_similar_instructions = most_similar_instructions
             instruction_data_entry.avg_similarity_score = float(np.mean(rouge_scores))
+
+            # Store the generated data
             machine_instruction_data.append(instruction_data_entry)
             all_instructions.append(instruction_data_entry.instruction)
             all_instruction_tokens.append(new_instruction_tokens)
+
+            # Update the progress bar
             progress_bar.update(1)
+
+        # Stop the process timer and log the durations
         process_duration = time.time() - process_start
         logger.info(
             f"Request {request_idx} took {request_duration:.2f}s, processing "
             f"took {process_duration:.2f}s"
         )
-        logger.info(f"Generated {total:,} instructions, kept {keep} instructions")
+        logger.info(f"Generated {total:,} instructions, kept {keep:,} instructions")
 
         # Store the generated instructions to disk
         with Path(output_dir, "regen.json").open("w") as f:
             json.dump(machine_instruction_data, f, indent=4, ensure_ascii=False)
+
+    # Close the progress bar
+    progress_bar.close()
 
 
 def encode_prompt(seed_instructions: list[InstructionSample]) -> str:
@@ -219,19 +237,24 @@ def post_process_response(
         # we discard it
         if idx == len(raw_instructions) - 1 and response.done_reason == "length":
             continue
+
         idx += num_prompt_instructions + 1
+
+        # If the data does not contain the expected format, we skip it
         splitted_data = re.split(rf"{idx}\.\s+(Instruktion|Input|Output):", inst)
         if len(splitted_data) != 7:
             continue
-        else:
-            inst = splitted_data[2].strip()
-            input = splitted_data[4].strip()
-            input = "" if input.lower() == "<noinput>" else input
-            output = splitted_data[6].strip()
-        # filter out too short or too long instructions
+
+        inst = splitted_data[2].strip()
+        input = splitted_data[4].strip()
+        input = "" if input.lower() == "<noinput>" else input
+        output = splitted_data[6].strip()
+
+        # If the instruction is too short or too long, we skip it
         if len(inst.split()) <= 3 or len(inst.split()) > 150:
             continue
-        # filter based on keywords that are not suitable for language models.
+
+        # Filter based on keywords that are not suitable for language models
         blacklist = [
             "image",
             "images",
@@ -251,8 +274,6 @@ def post_process_response(
             "music",
             "flowchart",
             "diagram",
-        ]
-        blacklist += [
             "billede",
             "billeder",
             "graf",
@@ -274,6 +295,7 @@ def post_process_response(
             flags=re.IGNORECASE,
         ):
             continue
+
         # We found that the model tends to add "write a program" to some existing
         # instructions, which lead to a lot of such instructions, and it's a bit
         # comfusing whether the model need to write a program or directly output the
@@ -281,13 +303,19 @@ def post_process_response(
         # for all programming instructions.
         if inst.startswith("Skriv et program"):
             continue
-        # filter those starting with punctuation
+
+        # Filter those starting with punctuation
         if inst[0] in string.punctuation:
             continue
-        # filter those starting with non-english character
-        if not inst[0].isascii():
+
+        # Filter those starting with non-Danish character
+        if not inst[0].isascii() and inst[0].lower() not in {"æ", "ø", "å"}:
             continue
-        instructions.append(
-            InstructionSample(instruction=inst, input=input, output=output)
+
+        # Store the instruction
+        new_instruction = InstructionSample(
+            instruction=inst, input=input, output=output
         )
+        instructions.append(new_instruction)
+
     return instructions
