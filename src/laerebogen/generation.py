@@ -146,7 +146,7 @@ def generate_instruction_following_data(
             new_instruction_tokens = scorer._tokenizer.tokenize(
                 instruction_data_entry.instruction
             )
-            with Pool(num_cpus) as p:
+            with Pool(processes=num_cpus) as p:
                 rouge_scores = p.map(
                     partial(rouge_scorer._score_lcs, new_instruction_tokens),
                     all_instruction_tokens,
