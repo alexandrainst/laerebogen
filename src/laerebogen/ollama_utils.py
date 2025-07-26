@@ -1,33 +1,13 @@
 """Functions related to generating text using Ollama."""
 
-import dataclasses
 import logging
 import math
 import time
-from collections.abc import Sequence
 
 import ollama
 from tqdm.auto import tqdm
 
 logger = logging.getLogger(__name__)
-
-
-# TODO: Consider deleting this
-@dataclasses.dataclass
-class DecodingArguments(object):
-    """Decoding arguments for text generation."""
-
-    max_tokens: int = 1800
-    temperature: float = 0.2
-    top_p: float = 1.0
-    n: int = 1
-    stream: bool = False
-    stop: Sequence[str] | None = None
-    presence_penalty: float = 0.0
-    frequency_penalty: float = 0.0
-    suffix: str | None = None
-    logprobs: int | None = None
-    echo: bool = False
 
 
 def generate_text_with_ollama(
@@ -64,7 +44,17 @@ def generate_text_with_ollama(
                 batch_completions: list[ollama.GenerateResponse] = []
                 for prompt_batch_i in prompt_batch:
                     completion_batch = ollama.generate(
-                        model=model_name, prompt=prompt_batch_i
+                        model=model_name,
+                        prompt=prompt_batch_i,
+                        options=ollama.Options(
+                            num_batch=1,
+                            num_ctx=3072,
+                            temperature=0.2,
+                            top_p=1.0,
+                            stop=["\n20", "20.", "20."],
+                            presence_penalty=0.0,
+                            frequency_penalty=0.0,
+                        ),
                     )
                     batch_completions.append(completion_batch)
                 completions.extend(batch_completions)

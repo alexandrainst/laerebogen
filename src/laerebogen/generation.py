@@ -117,15 +117,6 @@ def generate_instruction_following_data(
             prompt = encode_prompt(seed_instructions=seed_instructions)
             batch_inputs.append(prompt)
 
-        # decoding_args = DecodingArguments(
-        #     temperature=temperature,
-        #     n=1,
-        #     # hard-code to maximize the length. the requests will be automatically
-        #     # adjusted
-        #     max_tokens=3072,
-        #     top_p=top_p,
-        #     stop=["\n20", "20.", "20."],
-        # )
         request_start = time.time()
         responses = generate_text_with_ollama(
             prompts=batch_inputs, model_name=model_name, batch_size=request_batch_size
