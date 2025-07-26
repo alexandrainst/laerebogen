@@ -3,6 +3,7 @@
 Usage:
     python generate_dataset.py \
         [--output-dir <output_dir>] \
+        [--prompt-path <prompt_path>] \
         [--seed-tasks-path <seed_tasks_path>] \
         [--num-instructions-to-generate <num_instructions>] \
         [--model <model>] \
@@ -30,6 +31,13 @@ logging.basicConfig(
     default="data",
     show_default=True,
     help="Directory to save the generated dataset.",
+)
+@click.option(
+    "--prompt-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/prompt.txt",
+    show_default=True,
+    help="Path to the prompt file.",
 )
 @click.option(
     "--seed-tasks-path",
@@ -77,6 +85,7 @@ logging.basicConfig(
 )
 def generate(
     output_dir: str,
+    prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
     model: str,
@@ -89,6 +98,8 @@ def generate(
     Args:
         output_dir:
             Directory to save the generated dataset.
+        prompt_path:
+            Path to the prompt file.
         seed_tasks_path:
             Path to the seed tasks file.
         num_instructions_to_generate:
@@ -105,6 +116,7 @@ def generate(
     """
     generate_instruction_following_data(
         output_dir=output_dir,
+        prompt_path=prompt_path,
         seed_tasks_path=seed_tasks_path,
         num_instructions_to_generate=num_instructions_to_generate,
         model_id=model,
