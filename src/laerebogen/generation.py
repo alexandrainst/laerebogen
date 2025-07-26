@@ -31,7 +31,7 @@ def generate_instruction_following_data(
     num_instructions_to_generate: int,
     model_id: str,
     num_prompt_instructions: int,
-    request_batch_size: int,
+    batch_size: int,
     num_cpus: int,
 ) -> None:
     """Generate instructions following the seed tasks.
@@ -58,7 +58,7 @@ def generate_instruction_following_data(
             model, not a finetuned one.
         num_prompt_instructions:
             Number of instructions to use as prompts for each generated instruction.
-        request_batch_size:
+        batch_size:
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
@@ -120,9 +120,9 @@ def generate_instruction_following_data(
         # Randomly sample some seed instructions, that the new instructions should be
         # based on
         batch_inputs = []
-        for _ in range(request_batch_size):
+        for _ in range(batch_size):
             seed_instructions = random.sample(
-                seed_instruction_data, num_prompt_instructions
+                population=seed_instruction_data, k=num_prompt_instructions
             )
             prompt = encode_prompt(seed_instructions=seed_instructions, prompt=prompt)
             batch_inputs.append(prompt)
@@ -175,11 +175,12 @@ def generate_instruction_following_data(
             progress_bar.update(1)
 
         # Store the generated instructions to disk
-        with output_path.open("a") as f:
-            json_records = "\n".join(
-                instruction.json() for instruction in instruction_data_to_keep
-            )
-            f.write(json_records + "\n")
+        if instruction_data_to_keep:
+            with output_path.open("a") as f:
+                json_records = "\n".join(
+                    instruction.json() for instruction in instruction_data_to_keep
+                )
+                f.write(json_records + "\n")
 
     # Close the progress bar
     progress_bar.close()
@@ -203,10 +204,10 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
         instruction = re.sub(r"\s+", " ", seed.instruction).strip().rstrip(":")
         input = "<noinput>" if seed.input.lower() == "" else seed.input
         prompt += "###\n"
-        prompt += f"{idx}. Instruktion: {instruction}\n"
+        prompt += f"{idx}. Instruktion:\n{instruction}\n"
         prompt += f"{idx}. Input:\n{input}\n"
         prompt += f"{idx}. Output:\n{seed.output}\n"
-    prompt += f"###\n{idx + 1}. Instruktion:"
+    prompt += f"###\n{idx + 1}. Instruktion:\n"
     return prompt
 
 
@@ -230,17 +231,23 @@ def post_process_response(
     raw_instructions = re.split("###", raw_instructions)
     instructions = []
 
-    for idx, inst in enumerate(raw_instructions):
-        # if the decoding stops due to length, the last example is likely truncated so
+    for idx, inst in enumerate(raw_instructions, start=1):
+        # If the decoding stops due to length, the last example is likely truncated so
         # we discard it
-        if idx == len(raw_instructions) - 1 and response.done_reason == "length":
+        if idx == len(raw_instructions) and response.done_reason == "length":
+            logger.warning(
+                "The last instruction was truncated due to length. Skipping it."
+            )
             continue
 
-        idx += num_prompt_instructions + 1
-
         # If the data does not contain the expected format, we skip it
-        splitted_data = re.split(rf"{idx}\.\s+(Instruktion|Input|Output):", inst)
+        splitted_data = re.split(
+            rf"{idx + num_prompt_instructions}\.\s+(Instruktion|Input|Output):", inst
+        )
         if len(splitted_data) != 7:
+            logger.warning(
+                f"Skipping instruction {idx} due to unexpected format: {inst.strip()}"
+            )
             continue
 
         inst = splitted_data[2].strip()
@@ -250,6 +257,9 @@ def post_process_response(
 
         # If the instruction is too short or too long, we skip it
         if len(inst.split()) <= 3 or len(inst.split()) > 150:
+            logger.warning(
+                f"Skipping instruction {idx} due to length: {len(inst.split())} words."
+            )
             continue
 
         # Filter based on keywords that are not suitable for language models
@@ -292,22 +302,38 @@ def post_process_response(
             string=inst,
             flags=re.IGNORECASE,
         ):
+            logger.warning(
+                f"Skipping instruction {idx} due to blacklisted keywords: "
+                f"{inst.strip()}"
+            )
             continue
 
         # We found that the model tends to add "write a program" to some existing
         # instructions, which lead to a lot of such instructions, and it's a bit
-        # comfusing whether the model need to write a program or directly output the
+        # confusing whether the model need to write a program or directly output the
         # result. Here we filter them out. Note this is not a comprehensive filtering
         # for all programming instructions.
         if inst.startswith("Skriv et program"):
+            logger.warning(
+                f"Skipping instruction {idx} due to it starting with "
+                f"'Skriv et program': {inst.strip()}"
+            )
             continue
 
         # Filter those starting with punctuation
         if inst[0] in string.punctuation:
+            logger.warning(
+                f"Skipping instruction {idx} due to it starting with punctuation: "
+                f"{inst.strip()}"
+            )
             continue
 
         # Filter those starting with non-Danish character
         if not inst[0].isascii() and inst[0].lower() not in {"æ", "ø", "å"}:
+            logger.warning(
+                f"Skipping instruction {idx} due to it starting with a non-Danish "
+                f"character: {inst.strip()}"
+            )
             continue
 
         # Store the instruction
@@ -315,5 +341,9 @@ def post_process_response(
             instruction=inst, input=input, output=output
         )
         instructions.append(new_instruction)
+        logger.info(
+            f"Generated instruction {idx}: {inst.strip()} (input: {input.strip()}, "
+            f"output: {output.strip()})"
+        )
 
     return instructions

@@ -69,7 +69,7 @@ logging.basicConfig(
     help="Number of instructions to use as prompts for each generated instruction.",
 )
 @click.option(
-    "--request-batch-size",
+    "--batch-size",
     type=int,
     default=5,
     show_default=True,
@@ -90,7 +90,7 @@ def generate(
     num_instructions_to_generate: int,
     model: str,
     num_prompt_instructions: int,
-    request_batch_size: int,
+    batch_size: int,
     num_cpus: int,
 ) -> None:
     """Generate the dataset.
@@ -109,7 +109,7 @@ def generate(
             model, not a finetuned one.
         num_prompt_instructions:
             Number of instructions to use as prompts for each generated instruction.
-        request_batch_size:
+        batch_size:
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
@@ -122,7 +122,7 @@ def generate(
         num_instructions_to_generate=num_instructions_to_generate,
         model_id=model,
         num_prompt_instructions=num_prompt_instructions,
-        request_batch_size=request_batch_size,
+        batch_size=batch_size,
         num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
     )
 
