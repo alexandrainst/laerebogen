@@ -83,12 +83,15 @@ def generate_instruction_following_data(
     ]
     logger.info(f"Loaded {len(seed_instruction_data)} human-written seed instructions.")
 
+    # Ensure that the output file exists
+    output_path = Path(output_dir, "dataset.jsonl")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.touch(exist_ok=True)
+
     # Load the LM-generated instructions
-    machine_instruction_path = Path(output_dir, "dataset.jsonl")
-    machine_instruction_path.parent.mkdir(parents=True, exist_ok=True)
     machine_instruction_data = []
-    if machine_instruction_path.exists():
-        with machine_instruction_path.open() as f:
+    if output_path.exists():
+        with output_path.open() as f:
             machine_instruction_data = [
                 json.loads(line) for line in f.readlines() if line.strip()
             ]
@@ -136,8 +139,7 @@ def generate_instruction_following_data(
             instruction_data += new_instructions
 
         # Filter the generated instructions to not keep too similar ones
-        keep = 0
-        with Path(output_dir, "dataset.jsonl").open("a") as f:
+        with output_path.open("a") as f:
             for instruction_data_entry in instruction_data:
                 # Compute the similarity of the new instruction to all existing
                 # instructions
@@ -158,7 +160,6 @@ def generate_instruction_following_data(
                 # If the new instruction is too similar to existing ones, we skip it
                 if max(rouge_scores) > 0.7:
                     continue
-                keep += 1
 
                 # Store the similarity data in the instruction data entry
                 instruction_data_entry.most_similar_instructions = (
