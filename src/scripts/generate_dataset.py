@@ -114,6 +114,7 @@ def generate(
         num_cpus:
             Number of CPUs to use for parallel processing.
     """
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
     generate_instruction_following_data(
         output_dir=output_dir,
         prompt_path=prompt_path,
