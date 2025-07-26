@@ -139,49 +139,47 @@ def generate_instruction_following_data(
             instruction_data += new_instructions
 
         # Filter the generated instructions to not keep too similar ones
+        instruction_data_to_keep = []
+        for instruction_data_entry in instruction_data:
+            # Compute the similarity of the new instruction to all existing
+            # instructions
+            new_instruction_tokens = scorer._tokenizer.tokenize(
+                instruction_data_entry.instruction
+            )
+            with Pool(num_cpus) as p:
+                rouge_scores = p.map(
+                    partial(rouge_scorer._score_lcs, new_instruction_tokens),
+                    all_instruction_tokens,
+                )
+            rouge_scores = [score.fmeasure for score in rouge_scores]
+            most_similar_instructions = {
+                all_instructions[i]: rouge_scores[i]
+                for i in np.argsort(rouge_scores)[-10:][::-1]
+            }
+
+            # If the new instruction is too similar to existing ones, we skip it
+            if max(rouge_scores) > 0.7:
+                continue
+
+            # Store the similarity data in the instruction data entry
+            instruction_data_entry.most_similar_instructions = most_similar_instructions
+            instruction_data_entry.avg_similarity_score = float(np.mean(rouge_scores))
+
+            # Store the generated data
+            machine_instruction_data.append(instruction_data_entry)
+            all_instructions.append(instruction_data_entry.instruction)
+            all_instruction_tokens.append(new_instruction_tokens)
+            instruction_data_to_keep.append(instruction_data_entry)
+
+            # Update the progress bar
+            progress_bar.update(1)
+
+        # Store the generated instructions to disk
         with output_path.open("a") as f:
-            for instruction_data_entry in instruction_data:
-                # Compute the similarity of the new instruction to all existing
-                # instructions
-                new_instruction_tokens = scorer._tokenizer.tokenize(
-                    instruction_data_entry.instruction
-                )
-                with Pool(num_cpus) as p:
-                    rouge_scores = p.map(
-                        partial(rouge_scorer._score_lcs, new_instruction_tokens),
-                        all_instruction_tokens,
-                    )
-                rouge_scores = [score.fmeasure for score in rouge_scores]
-                most_similar_instructions = {
-                    all_instructions[i]: rouge_scores[i]
-                    for i in np.argsort(rouge_scores)[-10:][::-1]
-                }
-
-                # If the new instruction is too similar to existing ones, we skip it
-                if max(rouge_scores) > 0.7:
-                    continue
-
-                # Store the similarity data in the instruction data entry
-                instruction_data_entry.most_similar_instructions = (
-                    most_similar_instructions
-                )
-                instruction_data_entry.avg_similarity_score = float(
-                    np.mean(rouge_scores)
-                )
-
-                # Store the generated data
-                machine_instruction_data.append(instruction_data_entry)
-                all_instructions.append(instruction_data_entry.instruction)
-                all_instruction_tokens.append(new_instruction_tokens)
-
-                # Update the progress bar
-                progress_bar.update(1)
-
-                # Store the generated instructions to disk
-                for idx, instruction in enumerate(machine_instruction_data):
-                    json_record = instruction.json()
-                    include_newline = idx < len(machine_instruction_data) - 1
-                    f.write(f"{json_record}\n" if include_newline else json_record)
+            for idx, instruction in enumerate(instruction_data_to_keep):
+                json_record = instruction.json()
+                include_newline = idx < len(machine_instruction_data) - 1
+                f.write(f"{json_record}\n" if include_newline else json_record)
 
     # Close the progress bar
     progress_bar.close()
