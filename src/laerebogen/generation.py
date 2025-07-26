@@ -190,7 +190,7 @@ def encode_prompt(seed_instructions: list[InstructionSample]) -> str:
         prompt += f"{idx}. Instruktion: {instruction}\n"
         prompt += f"{idx}. Input:\n{input}\n"
         prompt += f"{idx}. Output:\n{seed.output}\n"
-    prompt += "###\n{idx + 1}. Instruktion:"
+    prompt += f"###\n{idx + 1}. Instruktion:"
     return prompt
 
 
