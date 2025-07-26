@@ -32,11 +32,11 @@ dataset: ## Generate the dataset
 	@echo "Dataset generated successfully!"
 
 install: ## Install dependencies
-	@echo "Installing the 'alpaka' project..."
+	@echo "Installing the 'lærebogen' project..."
 	@$(MAKE) --quiet install-uv
 	@$(MAKE) --quiet install-dependencies
 	@$(MAKE) --quiet install-pre-commit
-	@echo "Installed the 'alpaka' project! You can now activate your virtual environment with 'source .venv/bin/activate'."
+	@echo "Installed the 'lærebogen' project! You can now activate your virtual environment with 'source .venv/bin/activate'."
 	@echo "Note that this is a 'uv' project. Use 'uv add <package>' to install new dependencies and 'uv remove <package>' to remove them."
 
 install-uv:

@@ -1,5 +1,5 @@
 [project]
-name = "alpaka"
+name = "laerebogen"
 version = "0.0.0"
 description = "Generation of a Danish instruction dataset."
 readme = "README.md"
@@ -17,8 +17,8 @@ dependencies = [
 ]
 
 [project.urls]
-Repository = "https://github.com/alexandrainst/alpaka"
-Issues = "https://github.com/alexandrainst/alpaka/issues"
+Repository = "https://github.com/alexandrainst/laerebogen"
+Issues = "https://github.com/alexandrainst/laerebogen/issues"
 
 [project.license]
 file = "LICENSE"
@@ -93,7 +93,7 @@ convention = "google"
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = [
-    '--cov=src/alpaka',
+    '--cov=src/laerebogen',
     '--color=yes',
 ]
 xfail_strict = true
@@ -109,7 +109,7 @@ filterwarnings = [
 log_cli_level = "info"
 testpaths = [
     "tests",
-    "src/alpaka",
+    "src/laerebogen",
 ]
 
 [build-system]

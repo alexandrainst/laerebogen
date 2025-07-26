@@ -15,7 +15,7 @@ import logging
 
 import click
 
-from alpaka.generation import generate_instruction_following_data
+from laerebogen.generation import generate_instruction_following_data
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
