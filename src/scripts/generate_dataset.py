@@ -26,7 +26,7 @@ logging.basicConfig(
 @click.option(
     "--output-dir",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
-    default=".",
+    default="data",
     show_default=True,
     help="Directory to save the generated dataset.",
 )
