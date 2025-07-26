@@ -5,7 +5,6 @@ import logging
 import random
 import re
 import string
-import time
 import typing as t
 from functools import partial
 from multiprocessing import Pool
@@ -114,10 +113,7 @@ def generate_instruction_following_data(
     ]
 
     # Start generating instructions
-    request_idx = 0
     while len(machine_instruction_data) < num_instructions_to_generate:
-        request_idx += 1
-
         # Randomly sample some seed instructions, that the new instructions should be
         # based on
         batch_inputs = []
@@ -129,12 +125,9 @@ def generate_instruction_following_data(
             batch_inputs.append(prompt)
 
         # Generate new instructions with the LLM
-        request_start = time.time()
         responses = generate_text_with_ollama(prompts=batch_inputs, model_id=model_id)
-        request_duration = time.time() - request_start
 
         # Process the generated instructions
-        process_start = time.time()
         instruction_data: list[InstructionSample] = []
         for response in responses:
             new_instructions = post_process_response(
@@ -143,56 +136,51 @@ def generate_instruction_following_data(
             instruction_data += new_instructions
 
         # Filter the generated instructions to not keep too similar ones
-        total = len(instruction_data)
         keep = 0
-        for instruction_data_entry in instruction_data:
-            # Compute the similarity of the new instruction to all existing
-            # instructions
-            new_instruction_tokens = scorer._tokenizer.tokenize(
-                instruction_data_entry.instruction
-            )
-            with Pool(num_cpus) as p:
-                rouge_scores = p.map(
-                    partial(rouge_scorer._score_lcs, new_instruction_tokens),
-                    all_instruction_tokens,
+        with Path(output_dir, "dataset.jsonl").open("a") as f:
+            for instruction_data_entry in instruction_data:
+                # Compute the similarity of the new instruction to all existing
+                # instructions
+                new_instruction_tokens = scorer._tokenizer.tokenize(
+                    instruction_data_entry.instruction
                 )
-            rouge_scores = [score.fmeasure for score in rouge_scores]
-            most_similar_instructions = {
-                all_instructions[i]: rouge_scores[i]
-                for i in np.argsort(rouge_scores)[-10:][::-1]
-            }
+                with Pool(num_cpus) as p:
+                    rouge_scores = p.map(
+                        partial(rouge_scorer._score_lcs, new_instruction_tokens),
+                        all_instruction_tokens,
+                    )
+                rouge_scores = [score.fmeasure for score in rouge_scores]
+                most_similar_instructions = {
+                    all_instructions[i]: rouge_scores[i]
+                    for i in np.argsort(rouge_scores)[-10:][::-1]
+                }
 
-            # If the new instruction is too similar to existing ones, we skip it
-            if max(rouge_scores) > 0.7:
-                continue
-            keep += 1
+                # If the new instruction is too similar to existing ones, we skip it
+                if max(rouge_scores) > 0.7:
+                    continue
+                keep += 1
 
-            # Store the similarity data in the instruction data entry
-            instruction_data_entry.most_similar_instructions = most_similar_instructions
-            instruction_data_entry.avg_similarity_score = float(np.mean(rouge_scores))
+                # Store the similarity data in the instruction data entry
+                instruction_data_entry.most_similar_instructions = (
+                    most_similar_instructions
+                )
+                instruction_data_entry.avg_similarity_score = float(
+                    np.mean(rouge_scores)
+                )
 
-            # Store the generated data
-            machine_instruction_data.append(instruction_data_entry)
-            all_instructions.append(instruction_data_entry.instruction)
-            all_instruction_tokens.append(new_instruction_tokens)
+                # Store the generated data
+                machine_instruction_data.append(instruction_data_entry)
+                all_instructions.append(instruction_data_entry.instruction)
+                all_instruction_tokens.append(new_instruction_tokens)
 
-            # Update the progress bar
-            progress_bar.update(1)
+                # Update the progress bar
+                progress_bar.update(1)
 
-        # Stop the process timer and log the durations
-        process_duration = time.time() - process_start
-        logger.info(
-            f"Request {request_idx} took {request_duration:.2f}s, processing "
-            f"took {process_duration:.2f}s"
-        )
-        logger.info(f"Generated {total:,} instructions, kept {keep:,} instructions")
-
-        # Store the generated instructions to disk
-        with Path(output_dir, "dataset.jsonl").open("w") as f:
-            for idx, instruction in enumerate(machine_instruction_data):
-                json_record = json.dumps(instruction, ensure_ascii=False)
-                include_newline = idx < len(machine_instruction_data) - 1
-                f.write(f"{json_record}\n" if include_newline else json_record)
+                # Store the generated instructions to disk
+                for idx, instruction in enumerate(machine_instruction_data):
+                    json_record = json.dumps(instruction, ensure_ascii=False)
+                    include_newline = idx < len(machine_instruction_data) - 1
+                    f.write(f"{json_record}\n" if include_newline else json_record)
 
     # Close the progress bar
     progress_bar.close()
