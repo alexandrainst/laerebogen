@@ -179,7 +179,7 @@ def generate_instruction_following_data(
 
                 # Store the generated instructions to disk
                 for idx, instruction in enumerate(machine_instruction_data):
-                    json_record = json.dumps(instruction, ensure_ascii=False)
+                    json_record = instruction.json()
                     include_newline = idx < len(machine_instruction_data) - 1
                     f.write(f"{json_record}\n" if include_newline else json_record)
 

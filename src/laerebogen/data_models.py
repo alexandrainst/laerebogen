@@ -1,5 +1,6 @@
 """Data models used in the project."""
 
+import json
 from dataclasses import dataclass, field
 
 
@@ -26,3 +27,20 @@ class InstructionSample:
     output: str
     most_similar_instructions: dict[str, float] = field(default_factory=dict)
     avg_similarity_score: float = float("nan")
+
+    def json(self) -> str:
+        """Convert the instruction sample to a JSON string.
+
+        Returns:
+            A JSON string representation of the instruction sample.
+        """
+        return json.dumps(
+            dict(
+                instruction=self.instruction,
+                input=self.input,
+                output=self.output,
+                most_similar_instructions=self.most_similar_instructions,
+                avg_similarity_score=self.avg_similarity_score,
+            ),
+            ensure_ascii=False,
+        )
