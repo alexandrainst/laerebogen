@@ -176,10 +176,10 @@ def generate_instruction_following_data(
 
         # Store the generated instructions to disk
         with output_path.open("a") as f:
-            for idx, instruction in enumerate(instruction_data_to_keep):
-                json_record = instruction.json()
-                include_newline = idx < len(machine_instruction_data) - 1
-                f.write(f"{json_record}\n" if include_newline else json_record)
+            json_records = "\n".join(
+                instruction.json() for instruction in instruction_data_to_keep
+            )
+            f.write(json_records + "\n")
 
     # Close the progress bar
     progress_bar.close()
