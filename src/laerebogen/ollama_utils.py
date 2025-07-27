@@ -35,13 +35,7 @@ def generate_text_with_ollama(
                     model=model_id,
                     prompt=prompt,
                     options=ollama.Options(
-                        num_batch=1,
-                        num_ctx=8192,
-                        temperature=0.2,
-                        top_p=1.0,
-                        stop=["\n20", "20."],
-                        presence_penalty=0.0,
-                        frequency_penalty=0.0,
+                        num_ctx=8192, temperature=0.2, stop=["\n20", "20."]
                     ),
                 )
                 batch_completions.append(completion_batch)
