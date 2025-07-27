@@ -1,14 +1,21 @@
 """Functions related to generating text using vLLM."""
 
+import importlib.util
 import logging
+import typing as t
 
 import torch
-from vllm import LLM, RequestOutput, SamplingParams
+
+from .data_models import Response
+
+if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
+    from vllm import LLM, SamplingParams
+
 
 logger = logging.getLogger(__name__)
 
 
-def generate_text_with_vllm(prompts: list[str], model: LLM) -> list[RequestOutput]:
+def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
     """Decode with vLLM.
 
     Args:
@@ -23,11 +30,18 @@ def generate_text_with_vllm(prompts: list[str], model: LLM) -> list[RequestOutpu
     sampling_params = SamplingParams(
         stop=["\n20", "20."], temperature=0.2, max_tokens=8192
     )
-    completions = model.generate(prompts=prompts, sampling_params=sampling_params)
+    request_outputs = model.generate(prompts=prompts, sampling_params=sampling_params)
+    completions = [
+        Response(
+            completion=request_output.outputs[0].text,
+            done_reason=request_output.outputs[0].finish_reason,
+        )
+        for request_output in request_outputs
+    ]
     return completions
 
 
-def load_vllm_model(model_id: str) -> LLM:
+def load_vllm_model(model_id: str) -> "LLM":
     """Initialise a vLLM model.
 
     Args:

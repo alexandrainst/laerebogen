@@ -44,3 +44,18 @@ class InstructionSample:
             ),
             ensure_ascii=False,
         )
+
+
+@dataclass
+class Response:
+    """A response from an LLM.
+
+    Attributes:
+        completion:
+            The LLM's completion of the prompt.
+        done_reason:
+            The reason why the LLM stopped generating.
+    """
+
+    completion: str
+    done_reason: str | None

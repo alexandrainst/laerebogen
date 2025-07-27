@@ -14,12 +14,9 @@ import numpy as np
 import tqdm
 from rouge_score import rouge_scorer
 
-from .data_models import InstructionSample
+from .data_models import InstructionSample, Response
 from .ollama_utils import generate_text_with_ollama, try_download_ollama_model
-
-if t.TYPE_CHECKING:
-    import ollama
-
+from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +30,7 @@ def generate_instruction_following_data(
     num_prompt_instructions: int,
     batch_size: int,
     num_cpus: int,
+    backend: t.Literal["ollama", "vllm"],
 ) -> None:
     """Generate instructions following the seed tasks.
 
@@ -62,9 +60,15 @@ def generate_instruction_following_data(
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
+        backend:
+            The generation backend to use. Can be "ollama" or "vllm".
     """
     # Download the model, if it hasn't been downloaded yet
-    try_download_ollama_model(model_id=model_id)
+    match backend:
+        case "ollama":
+            try_download_ollama_model(model_id=model_id)
+        case "vllm":
+            model = load_vllm_model(model_id=model_id)
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -128,7 +132,13 @@ def generate_instruction_following_data(
             batch_inputs.append(prompt)
 
         # Generate new instructions with the LLM
-        responses = generate_text_with_ollama(prompts=batch_inputs, model_id=model_id)
+        match backend:
+            case "ollama":
+                responses = generate_text_with_ollama(
+                    prompts=batch_inputs, model_id=model_id
+                )
+            case "vllm":
+                responses = generate_text_with_vllm(prompts=batch_inputs, model=model)
 
         # Process the generated instructions
         instruction_data: list[InstructionSample] = []
@@ -212,7 +222,7 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
 
 
 def post_process_response(
-    num_prompt_instructions: int, response: "ollama.GenerateResponse"
+    num_prompt_instructions: int, response: Response
 ) -> list[InstructionSample]:
     """Post-process the response from the model to extract instructions.
 
@@ -225,10 +235,10 @@ def post_process_response(
     Returns:
         A list of seed instructions extracted from the response.
     """
-    raw_instructions = (
-        f"{num_prompt_instructions + 1}. Instruktion:" + response.response
+    raw_instructions = re.split(
+        pattern=r"###",
+        string=f"{num_prompt_instructions + 1}. Instruktion:" + response.completion,
     )
-    raw_instructions = re.split("###", raw_instructions)
     instructions = []
 
     for idx, inst in enumerate(raw_instructions, start=1):

@@ -14,6 +14,7 @@ Usage:
 
 import logging
 import multiprocessing as mp
+from typing import Literal
 
 import click
 
@@ -83,6 +84,14 @@ logging.basicConfig(
     help="Number of CPUs to use for parallel processing. Set to -1 to use all "
     "available CPUs.",
 )
+@click.option(
+    "--backend",
+    type=click.Choice(choices=["ollama", "vllm"], case_sensitive=False),
+    default="ollama",
+    show_default=True,
+    help="The generation backend to use. Can be either 'ollama' or 'vllm'. Note that "
+    "vLLM requires a GPU.",
+)
 def generate(
     output_dir: str,
     prompt_path: str,
@@ -92,6 +101,7 @@ def generate(
     num_prompt_instructions: int,
     batch_size: int,
     num_cpus: int,
+    backend: Literal["ollama", "vllm"],
 ) -> None:
     """Generate the dataset.
 
@@ -113,6 +123,8 @@ def generate(
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
+        backend:
+            The generation backend to use. Can be either 'ollama' or 'vllm'.
     """
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     generate_instruction_following_data(
@@ -124,6 +136,7 @@ def generate(
         num_prompt_instructions=num_prompt_instructions,
         batch_size=batch_size,
         num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
+        backend=backend,
     )
 
 

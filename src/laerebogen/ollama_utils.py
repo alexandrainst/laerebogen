@@ -7,12 +7,12 @@ import time
 import ollama
 from tqdm.auto import tqdm
 
+from .data_models import Response
+
 logger = logging.getLogger(__name__)
 
 
-def generate_text_with_ollama(
-    prompts: list[str], model_id: str
-) -> list[ollama.GenerateResponse]:
+def generate_text_with_ollama(prompts: list[str], model_id: str) -> list[Response]:
     """Decode with an Ollama LLM.
 
     Args:
@@ -22,14 +22,14 @@ def generate_text_with_ollama(
             The Ollama model ID to use for generation.
 
     Returns:
-        A list of ollama.GenerateResponse objects, each containing the generated text
-        for the corresponding prompt.
+        A list of responses, each containing the generated text for the corresponding
+        prompt.
     """
-    completions: list[ollama.GenerateResponse] = []
+    completions: list[Response] = []
     while True:
         try:
             # TODO: Do this asyncronously, to actually use the batching for something
-            batch_completions: list[ollama.GenerateResponse] = []
+            batch_completions: list[Response] = []
             for prompt in prompts:
                 completion_batch = ollama.generate(
                     model=model_id,
@@ -38,7 +38,12 @@ def generate_text_with_ollama(
                         num_ctx=8192, temperature=0.2, stop=["\n20", "20."]
                     ),
                 )
-                batch_completions.append(completion_batch)
+                batch_completions.append(
+                    Response(
+                        completion=completion_batch.response,
+                        done_reason=completion_batch.done_reason,
+                    )
+                )
             completions.extend(batch_completions)
             break
         except KeyboardInterrupt:
