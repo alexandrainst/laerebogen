@@ -13,8 +13,10 @@ dependencies = [
     "numpy>=2.3.2",
     "ollama>=0.5.1",
     "pandas>=2.3.1",
+    "ray>=2.48.0",
     "rouge-score>=0.1.2",
     "tqdm>=4.67.1",
+    "vllm>=0.5.0.post1",
 ]
 
 [project.urls]
