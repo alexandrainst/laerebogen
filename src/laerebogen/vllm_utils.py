@@ -10,6 +10,9 @@ from tqdm.auto import tqdm
 from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
 from .data_models import Response
 
+if importlib.util.find_spec("transformers") is not None or t.TYPE_CHECKING:
+    import transformers.utils.logging as transformers_logging
+
 if importlib.util.find_spec("torch") is not None or t.TYPE_CHECKING:
     import torch
 
@@ -63,6 +66,7 @@ def load_vllm_model(model_id: str) -> "LLM":
     Returns:
         The loaded vLLM model.
     """
+    transformers_logging.set_verbosity_error()
     logging.getLogger("vllm").setLevel(logging.CRITICAL)
     logging.getLogger("vllm.engine.llm_engine").setLevel(logging.CRITICAL)
     logging.getLogger("vllm.transformers_utils.tokenizer").setLevel(logging.CRITICAL)
