@@ -15,6 +15,7 @@ Usage:
 
 import logging
 import multiprocessing as mp
+import os
 from typing import Literal
 
 import click
@@ -128,6 +129,8 @@ def generate(
             The generation backend to use. Can be either 'ollama' or 'vllm'.
     """
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
     generate_instruction_following_data(
         output_dir=output_dir,
         prompt_path=prompt_path,
