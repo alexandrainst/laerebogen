@@ -4,12 +4,11 @@ import importlib.util
 import logging
 import typing as t
 
-import torch
-
 from .constants import MAX_CONTEXT_LENGTH
 from .data_models import Response
 
 if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
+    import torch
     from vllm import LLM, SamplingParams
 
 
