@@ -6,6 +6,7 @@ import random
 import re
 import string
 import typing as t
+from copy import deepcopy
 from functools import partial
 from multiprocessing import Pool
 from pathlib import Path
@@ -213,17 +214,17 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
     Returns:
         A string containing the encoded prompt.
     """
-    prompt = prompt + "\n"
+    encoded_prompt = deepcopy(prompt) + "\n"
     idx = 0
     for idx, seed in enumerate(seed_instructions, start=1):
         instruction = re.sub(r"\s+", " ", seed.instruction).strip().rstrip(":")
         input = "<noinput>" if seed.input.lower() == "" else seed.input
-        prompt += "###\n"
-        prompt += f"{idx}. Instruktion:\n{instruction}\n"
-        prompt += f"{idx}. Input:\n{input}\n"
-        prompt += f"{idx}. Output:\n{seed.output}\n"
-    prompt += f"###\n{idx + 1}. Instruktion:\n"
-    return prompt
+        encoded_prompt += "###\n"
+        encoded_prompt += f"{idx}. Instruktion:\n{instruction}\n"
+        encoded_prompt += f"{idx}. Input:\n{input}\n"
+        encoded_prompt += f"{idx}. Output:\n{seed.output}\n"
+    encoded_prompt += f"###\n{idx + 1}. Instruktion:\n"
+    return encoded_prompt
 
 
 def post_process_response(
