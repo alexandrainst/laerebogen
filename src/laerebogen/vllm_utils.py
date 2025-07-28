@@ -5,6 +5,8 @@ import logging
 import os
 import typing as t
 
+from tqdm.auto import tqdm
+
 from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
 from .data_models import Response
 
@@ -36,7 +38,11 @@ def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
     sampling_params = SamplingParams(
         stop=STOP_TOKENS, temperature=TEMPERATURE, max_tokens=MAX_CONTEXT_LENGTH
     )
-    request_outputs = model.generate(prompts=prompts, sampling_params=sampling_params)
+    request_outputs = model.generate(
+        prompts=prompts,
+        sampling_params=sampling_params,
+        use_tqdm=get_pbar_without_leave,
+    )
     completions = [
         Response(
             completion=request_output.outputs[0].text,
@@ -82,3 +88,19 @@ def load_vllm_model(model_id: str) -> "LLM":
         enforce_eager=True,
         enable_prefix_caching=True,
     )
+
+
+def get_pbar_without_leave(*tqdm_args, **tqdm_kwargs) -> tqdm:
+    """Get a progress bar for vLLM which disappears after completion.
+
+    Args:
+        *tqdm_args:
+            Positional arguments to pass to tqdm.
+        **tqdm_kwargs:
+            Additional keyword arguments to pass to tqdm.
+
+    Returns:
+        A tqdm progress bar.
+    """
+    tqdm_kwargs.pop("leave", None)  # Remove the 'leave' key if it exists
+    return tqdm(*tqdm_args, leave=False, **tqdm_kwargs)
