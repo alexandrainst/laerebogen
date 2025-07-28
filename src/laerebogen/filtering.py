@@ -164,17 +164,12 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
     if instruction_sample.input:
         texts_that_need_detection.append(instruction_sample.input)
 
-    detector = LanguageDetectorBuilder.from_languages(
-        Language.DANISH,
-        Language.BOKMAL,
-        Language.NYNORSK,
-        Language.SWEDISH,
-        Language.ENGLISH,
-    ).build()
-    detected_languages = detector.detect_languages_in_parallel_of(
-        texts=texts_that_need_detection
-    )
-    return all(lang == Language.DANISH for lang in detected_languages)
+    detector = LanguageDetectorBuilder.from_all_languages().build()
+    language_confidences = [
+        detector.compute_language_confidence(text=text, language=Language.DANISH)
+        for text in texts_that_need_detection
+    ]
+    return all(confidence > 0.9 for confidence in language_confidences)
 
 
 def is_not_similar_to_existing_instructions(
