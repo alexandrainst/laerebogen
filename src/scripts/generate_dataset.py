@@ -23,10 +23,6 @@ import click
 
 from laerebogen.generation import generate_instruction_following_data
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
-)
-
 
 @click.command()
 @click.option(
@@ -96,6 +92,7 @@ logging.basicConfig(
     help="The generation backend to use. Can be either 'ollama' or 'vllm'. Note that "
     "vLLM requires a GPU.",
 )
+@click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
 def generate(
     output_dir: str,
     prompt_path: str,
@@ -106,6 +103,7 @@ def generate(
     batch_size: int,
     num_cpus: int,
     backend: Literal["ollama", "vllm"],
+    verbose: bool,
 ) -> None:
     """Generate the dataset.
 
@@ -129,7 +127,15 @@ def generate(
             Number of CPUs to use for parallel processing.
         backend:
             The generation backend to use. Can be either 'ollama' or 'vllm'.
+        verbose:
+            Enable verbose logging.
     """
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format="%(asctime)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     warnings.filterwarnings(action="ignore", category=UserWarning)

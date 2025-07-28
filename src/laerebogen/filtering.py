@@ -33,7 +33,7 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
     ]
     for filter_fn in ALL_FILTERS:
         if not filter_fn(instruction_sample):
-            logger.info(
+            logger.debug(
                 "The following instruction was filtered out by the "
                 f"{filter_fn.__name__!r} filter:\n{instruction_sample.instruction}"
             )

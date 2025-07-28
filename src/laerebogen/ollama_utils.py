@@ -53,10 +53,10 @@ def generate_text_with_ollama(prompts: list[str], model_id: str) -> list[Respons
             logger.info("Stopping generation due to keyboard interrupt.")
             sys.exit(0)
         except ollama.ResponseError as e:
-            logger.warning(f"Ollama ResponseError: {e}. Retrying...")
+            logger.debug(f"Ollama ResponseError: {e}. Retrying...")
             time.sleep(2.0)
         except Exception as e:
-            logger.warning(f"An unexpected error occurred: {e}. Retrying...")
+            logger.debug(f"An unexpected error occurred: {e}. Retrying...")
             time.sleep(2.0)
 
     return completions
@@ -103,7 +103,7 @@ def try_download_ollama_model(model_id: str) -> bool:
                         f"{model_id.split('/')[0]}/{ollama_model_id_with_prefix}"
                     )
                     ollama.pull(model=ollama_model_id_with_prefix, stream=True)
-                    logger.info(
+                    logger.error(
                         f"The model {model_id!r} cannot be found on Ollama, but the "
                         f"model {model_id_with_prefix} *was* found, so try again with "
                         "that model ID."
