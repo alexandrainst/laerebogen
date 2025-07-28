@@ -251,22 +251,21 @@ def post_process_response(
             continue
 
         # If the data does not contain the expected format, we skip it
-        splitted_data = [
-            part.strip()
-            for part in re.split(
-                rf"{idx + num_prompt_instructions}\.\s+Instruktion|Input|Output:", inst
-            )
-            if part.strip()
-        ]
-        if len(splitted_data) != 3:
+        splitted_data = re.split(
+            pattern=rf"{idx + num_prompt_instructions}\.\s+(Instruktion|Input|Output):",
+            string=inst,
+        )
+        if len(splitted_data) != 7:
             logger.info(
                 f"Skipping instruction {idx} due to unexpected format:\n{inst.strip()}"
             )
             continue
 
         # Extract instruction, input, and output
-        inst, input, output = splitted_data
+        inst = splitted_data[2].strip()
+        input = splitted_data[4].strip()
         input = "" if input.lower() == "<noinput>" else input
+        output = splitted_data[6].strip()
 
         # Compute the similarity of the new instruction to all existing
         # instructions
@@ -284,9 +283,9 @@ def post_process_response(
 
         # Store the instruction
         new_instruction = InstructionSample(
-            instruction=inst.strip(),
-            input=input.strip(),
-            output=output.strip(),
+            instruction=inst,
+            input=input,
+            output=output,
             most_similar_instructions=most_similar_instructions,
             avg_similarity_score=float(np.mean(rouge_scores)),
             instruction_tokens=new_instruction_tokens,
