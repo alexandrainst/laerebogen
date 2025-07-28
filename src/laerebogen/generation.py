@@ -131,6 +131,10 @@ def generate_instruction_following_data(
             prompt = encode_prompt(seed_instructions=seed_instructions, prompt=prompt)
             batch_inputs.append(prompt)
 
+        # Check that the prompts are not too long
+        max_prompt_length = max(len(prompt) for prompt in batch_inputs)
+        logger.info(f"Max prompt length: {max_prompt_length} characters.")
+
         # Generate new instructions with the LLM
         match backend:
             case "ollama":
