@@ -176,6 +176,10 @@ def generate_instruction_following_data(
 
             # If the new instruction is too similar to existing ones, we skip it
             if max(rouge_scores) > 0.7:
+                logger.warning(
+                    f"Skipping instruction '{instruction_data_entry.instruction}' "
+                    f"due to high similarity with existing instructions."
+                )
                 continue
 
             # Store the similarity data in the instruction data entry
