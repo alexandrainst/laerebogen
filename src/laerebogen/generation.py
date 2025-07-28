@@ -134,7 +134,6 @@ def generate_instruction_following_data(
 
         # Check that the prompts are not too long
         max_prompt_length = max(len(prompt) for prompt in batch_inputs)
-        breakpoint()
         logger.info(f"Max prompt length: {max_prompt_length} characters.")
 
         # Generate new instructions with the LLM
