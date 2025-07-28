@@ -66,7 +66,8 @@ def not_too_long(instruction_sample: InstructionSample) -> bool:
         True if the instruction should be kept, False if it should be filtered out.
     """
     num_instruction_words = len(instruction_sample.instruction.split())
-    return num_instruction_words < 150
+    num_input_words = len(instruction_sample.input.split())
+    return num_instruction_words < 150 and num_input_words < 150
 
 
 def does_not_contain_banned_word(instruction_sample: InstructionSample) -> bool:
