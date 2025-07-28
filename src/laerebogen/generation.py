@@ -11,8 +11,8 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
-import tqdm
 from rouge_score import rouge_scorer
+from tqdm.auto import tqdm
 
 from laerebogen.filtering import keep_instruction
 
@@ -109,7 +109,7 @@ def generate_instruction_following_data(
     scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
 
     # Initialise the progress bar
-    progress_bar = tqdm.tqdm(total=num_instructions_to_generate)
+    progress_bar = tqdm(total=num_instructions_to_generate)
     if machine_instruction_data:
         progress_bar.update(len(machine_instruction_data))
 
@@ -146,7 +146,9 @@ def generate_instruction_following_data(
 
         # Process the generated instructions
         instruction_data: list[InstructionSample] = []
-        for response in responses:
+        for response in tqdm(
+            iterable=responses, desc="Processing responses", leave=False
+        ):
             new_instructions = post_process_response(
                 num_prompt_instructions=num_prompt_instructions,
                 response=response,
