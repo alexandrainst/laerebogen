@@ -8,8 +8,9 @@ Usage:
         [--num-instructions-to-generate <num_instructions>] \
         [--model <model>] \
         [--num-prompt-instructions <num_prompt_instructions>] \
-        [--request-batch-size <request_batch_size>] \
-        [--num-cpus <num_cpus>]
+        [--batch-size <batch_size>] \
+        [--num-cpus <num_cpus>] \
+        [--backend <backend>]
 """
 
 import logging
