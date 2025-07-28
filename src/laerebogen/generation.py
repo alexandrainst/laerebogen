@@ -129,8 +129,10 @@ def generate_instruction_following_data(
             seed_instructions = random.sample(
                 population=seed_instruction_data, k=num_prompt_instructions
             )
-            prompt = encode_prompt(seed_instructions=seed_instructions, prompt=prompt)
-            batch_inputs.append(prompt)
+            encoded_prompt = encode_prompt(
+                seed_instructions=seed_instructions, prompt=prompt
+            )
+            batch_inputs.append(encoded_prompt)
 
         # Check that the prompts are not too long
         max_prompt_length = max(len(prompt) for prompt in batch_inputs)
