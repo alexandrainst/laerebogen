@@ -28,7 +28,7 @@ def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
         A list of responses.
     """
     sampling_params = SamplingParams(
-        stop=["\n20", "20."], temperature=0.2, max_tokens=8192
+        stop=["\n20", "20."], temperature=0.2, max_tokens=16_384
     )
     request_outputs = model.generate(prompts=prompts, sampling_params=sampling_params)
     completions = [

@@ -35,7 +35,7 @@ def generate_text_with_ollama(prompts: list[str], model_id: str) -> list[Respons
                     model=model_id,
                     prompt=prompt,
                     options=ollama.Options(
-                        num_ctx=8192, temperature=0.2, stop=["\n20", "20."]
+                        num_ctx=16_384, temperature=0.2, stop=["\n20", "20."]
                     ),
                 )
                 batch_completions.append(
