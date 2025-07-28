@@ -157,6 +157,13 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
     Returns:
         True if the instruction should be kept, False if it should be filtered out.
     """
+    texts_that_need_detection = [
+        instruction_sample.instruction,
+        instruction_sample.output,
+    ]
+    if instruction_sample.input:
+        texts_that_need_detection.append(instruction_sample.input)
+
     detector = LanguageDetectorBuilder.from_languages(
         Language.DANISH,
         Language.BOKMAL,
@@ -165,11 +172,7 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
         Language.ENGLISH,
     ).build()
     detected_languages = detector.detect_languages_in_parallel_of(
-        texts=[
-            instruction_sample.instruction,
-            instruction_sample.input,
-            instruction_sample.output,
-        ]
+        texts=texts_that_need_detection
     )
     return all(lang == Language.DANISH for lang in detected_languages)
 
