@@ -10,7 +10,8 @@ Usage:
         [--num-prompt-instructions <num_prompt_instructions>] \
         [--batch-size <batch_size>] \
         [--num-cpus <num_cpus>] \
-        [--backend <backend>]
+        [--backend <backend>] \
+        [--verbose]
 """
 
 import logging
