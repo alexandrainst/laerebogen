@@ -59,10 +59,11 @@ logging.basicConfig(
 @click.option(
     "--model",
     type=str,
-    default="llama3.1:405b-text-q8_0",
+    default=None,
     show_default=True,
-    help="The Ollama model ID of the model to use for generation. Must be a base "
-    "model, not a finetuned one.",
+    help="The model ID of the model to use for generation. Must be a base model, not "
+    "a finetuned one. Defaults to 'llama3.1:70b-text-fp16' when using Ollama, and "
+    "'meta-llama/Llama-3.1-70B' when using vLLM.",
 )
 @click.option(
     "--num-prompt-instructions",
@@ -99,7 +100,7 @@ def generate(
     prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
-    model: str,
+    model: str | None,
     num_prompt_instructions: int,
     batch_size: int,
     num_cpus: int,
@@ -116,8 +117,8 @@ def generate(
             Path to the seed tasks file.
         num_instructions_to_generate:
             Number of instructions to generate.
-        model_name:
-            The Ollama model ID of the model to use for generation. Must be a base
+        model:
+            The model ID of the model to use for generation. Must be a base
             model, not a finetuned one.
         num_prompt_instructions:
             Number of instructions to use as prompts for each generated instruction.
@@ -130,6 +131,13 @@ def generate(
     """
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+    if model is None:
+        match backend:
+            case "ollama":
+                model = "llama3.1:70b-text-fp16"
+            case "vllm":
+                model = "meta-llama/Llama-3.1-70B"
 
     generate_instruction_following_data(
         output_dir=output_dir,
