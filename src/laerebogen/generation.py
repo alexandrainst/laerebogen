@@ -106,7 +106,7 @@ def generate_instruction_following_data(
         )
 
     # Initialise the Rouge scorer for similarity scoring
-    scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=False)
+    scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
 
     # Initialise the progress bar
     progress_bar = tqdm.tqdm(total=num_instructions_to_generate)
@@ -118,7 +118,7 @@ def generate_instruction_following_data(
         seed_instruction.instruction for seed_instruction in seed_instruction_data
     ] + [instruction["instruction"] for instruction in machine_instruction_data]
     all_instruction_tokens = [
-        scorer._tokenizer.tokenize(inst) for inst in all_instructions
+        scorer._tokenizer.tokenize(text=inst) for inst in all_instructions
     ]
 
     # Start generating instructions
