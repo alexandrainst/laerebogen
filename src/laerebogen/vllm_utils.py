@@ -68,6 +68,8 @@ def load_vllm_model(model_id: str) -> "LLM":
     logging.getLogger("vllm.platforms").setLevel(logging.CRITICAL)
     logging.getLogger("ray._private.worker").setLevel(logging.CRITICAL)
     logging.getLogger("ray._private.services").setLevel(logging.CRITICAL)
+    logging.getLogger("ray._private.runtime_env.packaging").setLevel(logging.CRITICAL)
+    logging.getLogger("ray._private.utils").setLevel(logging.CRITICAL)
     os.environ["LOG_LEVEL"] = "CRITICAL"
     os.environ["VLLM_CONFIGURE_LOGGING"] = "0"
     if importlib.util.find_spec("ray") is not None:
