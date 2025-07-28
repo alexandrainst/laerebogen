@@ -75,14 +75,14 @@ logging.basicConfig(
 @click.option(
     "--batch-size",
     type=int,
-    default=1,
+    default=128,
     show_default=True,
     help="Number of requests to send to the model at once.",
 )
 @click.option(
     "--num-cpus",
     type=int,
-    default=1,
+    default=2,
     show_default=True,
     help="Number of CPUs to use for parallel processing. Set to -1 to use all "
     "available CPUs.",
