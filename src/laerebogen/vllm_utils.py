@@ -55,7 +55,7 @@ def load_vllm_model(model_id: str) -> "LLM":
         model=model_id,
         tokenizer=model_id,
         gpu_memory_utilization=0.9,
-        max_model_len=8_192,
+        max_model_len=16_384,
         seed=4242,
         distributed_executor_backend="ray" if torch.cuda.device_count() > 1 else "mp",
         tensor_parallel_size=torch.cuda.device_count(),
