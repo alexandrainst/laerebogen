@@ -16,6 +16,7 @@ Usage:
 import logging
 import multiprocessing as mp
 import os
+import warnings
 from typing import Literal
 
 import click
@@ -131,6 +132,8 @@ def generate(
     """
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    warnings.filterwarnings(action="ignore", category=UserWarning)
+    warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     if model is None:
         match backend:
