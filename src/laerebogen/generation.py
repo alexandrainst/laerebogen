@@ -249,7 +249,7 @@ def post_process_response(
         # If the decoding stops due to length, the last example is likely truncated so
         # we discard it
         if idx == len(raw_instructions) and response.done_reason == "length":
-            logger.warning(
+            logger.info(
                 "The last instruction was truncated due to length. Skipping it."
             )
             continue
@@ -263,8 +263,8 @@ def post_process_response(
             if part.strip()
         ]
         if len(splitted_data) != 3:
-            logger.warning(
-                f"Skipping instruction {idx} due to unexpected format: {inst.strip()}"
+            logger.info(
+                f"Skipping instruction {idx} due to unexpected format:\n{inst.strip()}"
             )
             continue
 

@@ -56,7 +56,7 @@ def generate_text_with_ollama(prompts: list[str], model_id: str) -> list[Respons
             logger.warning(f"Ollama ResponseError: {e}. Retrying...")
             time.sleep(2.0)
         except Exception as e:
-            logger.info(f"An unexpected error occurred: {e}. Retrying...")
+            logger.warning(f"An unexpected error occurred: {e}. Retrying...")
             time.sleep(2.0)
 
     return completions
