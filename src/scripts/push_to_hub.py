@@ -1,7 +1,10 @@
 """Push the dataset to the Hugging Face Hub.
 
 Usage:
-    python push_to_hub.py <data-path> [--repo_id] [--private]
+    python push_to_hub.py \
+        [--data-path <data_path>] \
+        [--repo_id <repo_id>] \
+        [--private]
 """
 
 import logging
@@ -16,7 +19,13 @@ logger = logging.getLogger("build_seed_task_jsonl")
 
 
 @click.command()
-@click.argument("data_path", type=str)
+@click.option(
+    "--data-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/dataset.jsonl",
+    show_default=True,
+    help="Path to the dataset stored as a JSONL file.",
+)
 @click.option(
     "--repo_id",
     type=str,
