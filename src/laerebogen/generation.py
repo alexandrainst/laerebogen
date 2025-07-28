@@ -1,4 +1,11 @@
-"""Generation of the instruction-following data using a language model."""
+"""Generation of the instruction-following data using a language model.
+
+This is the method described in [1], based on [2], and uses seed tasks to generate new
+instructions using a base decoder model.
+
+[1]: https://github.com/tatsu-lab/stanford_alpaca
+[2]: https://doi.org/10.18653/v1/2023.acl-long.754
+"""
 
 import json
 import logging
