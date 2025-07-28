@@ -145,9 +145,9 @@ def generate(
     if model is None:
         match backend:
             case "ollama":
-                model = "llama3:70b-text-fp16"
+                model = "gemma3:27b-it-fp16"
             case "vllm":
-                model = "meta-llama/Meta-Llama-3-70B"
+                model = "google/gemma-3-27b-pt"
 
     generate_instruction_following_data(
         output_dir=output_dir,
