@@ -10,7 +10,7 @@ Usage:
 import logging
 
 import click
-from datasets import load_dataset
+from datasets import Dataset, load_dataset
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
@@ -54,6 +54,10 @@ def main(
     """
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path, split="train")
+    dataset = dataset.remove_columns(column_names="most_similar_instructions")
+    assert isinstance(dataset, Dataset), (
+        f"Expected dataset to be of type 'Dataset', but got {type(dataset)}."
+    )
     logger.info(f"Dataset loaded with {len(dataset):,} examples.")
 
     logger.info(f"Pushing dataset to Hugging Face Hub at {repo_id!r}...")
