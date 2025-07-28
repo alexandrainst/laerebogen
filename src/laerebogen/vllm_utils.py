@@ -65,7 +65,7 @@ def load_vllm_model(model_id: str) -> "LLM":
     logging.getLogger("vllm.transformers_utils.tokenizer").setLevel(logging.CRITICAL)
     logging.getLogger("vllm.core.scheduler").setLevel(logging.CRITICAL)
     logging.getLogger("vllm.model_executor.weight_utils").setLevel(logging.CRITICAL)
-    logging.getLogger("vllm.platforms").setLevel(logging.CRITICAL)
+    logging.getLogger("vllm.platforms.__init__").setLevel(logging.CRITICAL)
     logging.getLogger("ray._private.worker").setLevel(logging.CRITICAL)
     logging.getLogger("ray._private.services").setLevel(logging.CRITICAL)
     logging.getLogger("ray._private.runtime_env.packaging").setLevel(logging.CRITICAL)
