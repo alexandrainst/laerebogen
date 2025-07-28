@@ -50,7 +50,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--num-instructions-to-generate",
     type=int,
-    default=52_000,
+    default=100_000,
     show_default=True,
     help="Number of instructions to generate.",
 )
