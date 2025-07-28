@@ -288,9 +288,9 @@ def post_process_response(
 
         # Store the instruction
         new_instruction = InstructionSample(
-            instruction=inst,
-            input=input,
-            output=output,
+            instruction=inst.strip(),
+            input=input.strip(),
+            output=output.strip(),
             most_similar_instructions=most_similar_instructions,
             avg_similarity_score=float(np.mean(rouge_scores)),
             instruction_tokens=new_instruction_tokens,
