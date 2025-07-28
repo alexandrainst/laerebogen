@@ -144,7 +144,7 @@ def starts_with_danish_character(instruction_sample: InstructionSample) -> bool:
     """
     return instruction_sample.instruction[
         0
-    ].isascii() and instruction_sample.instruction.lower().startswith(tuple("æøå"))
+    ].isascii() or instruction_sample.instruction.lower().startswith(tuple("æøå"))
 
 
 def is_danish(instruction_sample: InstructionSample) -> bool:
