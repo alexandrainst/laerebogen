@@ -942,6 +942,7 @@ dependencies = [
     { name = "pandas" },
     { name = "ray" },
     { name = "rouge-score" },
+    { name = "setuptools" },
     { name = "tqdm" },
     { name = "vllm" },
 ]
@@ -961,6 +962,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.1" },
     { name = "ray", specifier = ">=2.48.0" },
     { name = "rouge-score", specifier = ">=0.1.2" },
+    { name = "setuptools", specifier = ">=79.0.1" },
     { name = "tqdm", specifier = ">=4.67.1" },
     { name = "vllm", specifier = ">0.9" },
 ]
