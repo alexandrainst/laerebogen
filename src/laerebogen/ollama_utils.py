@@ -7,7 +7,7 @@ import time
 import ollama
 from tqdm.auto import tqdm
 
-from .constants import MAX_CONTEXT_LENGTH
+from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
 from .data_models import Response
 
 logger = logging.getLogger(__name__)
@@ -37,8 +37,8 @@ def generate_text_with_ollama(prompts: list[str], model_id: str) -> list[Respons
                     prompt=prompt,
                     options=ollama.Options(
                         num_ctx=MAX_CONTEXT_LENGTH,
-                        temperature=0.2,
-                        stop=["\n20", "20."],
+                        temperature=TEMPERATURE,
+                        stop=STOP_TOKENS,
                     ),
                 )
                 batch_completions.append(
