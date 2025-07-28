@@ -355,9 +355,11 @@ def post_process_response(
             instruction=inst, input=input, output=output
         )
         instructions.append(new_instruction)
+
+        # Log the generated instruction
+        log_input = f"input: {input}" if input else "no input"
         logger.info(
-            f"Generated instruction {idx}: {inst.strip()} (input: {input.strip()}, "
-            f"output: {output.strip()})"
+            f"Generated instruction {idx}:\n{inst} ({log_input}, output: {output})"
         )
 
     return instructions
