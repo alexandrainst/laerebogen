@@ -4,7 +4,6 @@ import json
 import logging
 import random
 import re
-import string
 import typing as t
 from copy import deepcopy
 from functools import partial
@@ -14,6 +13,8 @@ from pathlib import Path
 import numpy as np
 import tqdm
 from rouge_score import rouge_scorer
+
+from laerebogen.filtering import keep_instruction
 
 from .data_models import InstructionSample, Response
 from .ollama_utils import generate_text_with_ollama, try_download_ollama_model
@@ -151,55 +152,34 @@ def generate_instruction_following_data(
         instruction_data: list[InstructionSample] = []
         for response in responses:
             new_instructions = post_process_response(
-                num_prompt_instructions=num_prompt_instructions, response=response
+                num_prompt_instructions=num_prompt_instructions,
+                response=response,
+                scorer=scorer,
+                previous_instructions=all_instructions,
+                previous_instruction_tokens=all_instruction_tokens,
+                num_cpus=num_cpus,
             )
-            instruction_data += new_instructions
+            for instruction in new_instructions:
+                if keep_instruction(instruction_sample=instruction):
+                    instruction_data.append(instruction)
 
-        # Filter the generated instructions to not keep too similar ones
-        instruction_data_to_keep = []
-        for instruction_data_entry in instruction_data:
-            # Compute the similarity of the new instruction to all existing
-            # instructions
-            new_instruction_tokens = scorer._tokenizer.tokenize(
-                instruction_data_entry.instruction
+        if instruction_data:
+            # Update the existing intermediate data
+            machine_instruction_data.extend(instruction_data)
+            all_instructions.extend(
+                instruction.instruction for instruction in instruction_data
             )
-            with Pool(processes=num_cpus) as p:
-                rouge_scores = p.map(
-                    partial(rouge_scorer._score_lcs, new_instruction_tokens),
-                    all_instruction_tokens,
-                )
-            rouge_scores = [score.fmeasure for score in rouge_scores]
-            most_similar_instructions = {
-                all_instructions[i]: rouge_scores[i]
-                for i in np.argsort(rouge_scores)[-10:][::-1]
-            }
-
-            # If the new instruction is too similar to existing ones, we skip it
-            if max(rouge_scores) > 0.7:
-                logger.warning(
-                    f"Skipping instruction '{instruction_data_entry.instruction}' "
-                    f"due to high similarity with existing instructions."
-                )
-                continue
-
-            # Store the similarity data in the instruction data entry
-            instruction_data_entry.most_similar_instructions = most_similar_instructions
-            instruction_data_entry.avg_similarity_score = float(np.mean(rouge_scores))
-
-            # Store the generated data
-            machine_instruction_data.append(instruction_data_entry)
-            all_instructions.append(instruction_data_entry.instruction)
-            all_instruction_tokens.append(new_instruction_tokens)
-            instruction_data_to_keep.append(instruction_data_entry)
+            all_instruction_tokens.extend(
+                instruction.instruction_tokens for instruction in instruction_data
+            )
 
             # Update the progress bar
-            progress_bar.update(1)
+            progress_bar.update(len(instruction_data))
 
-        # Store the generated instructions to disk
-        if instruction_data_to_keep:
+            # Store the generated instructions to disk
             with output_path.open("a") as f:
                 json_records = "\n".join(
-                    instruction.json() for instruction in instruction_data_to_keep
+                    instruction.json() for instruction in instruction_data
                 )
                 f.write(json_records + "\n")
 
@@ -233,7 +213,12 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
 
 
 def post_process_response(
-    num_prompt_instructions: int, response: Response
+    num_prompt_instructions: int,
+    response: Response,
+    scorer: rouge_scorer.RougeScorer,
+    previous_instructions: list[str],
+    previous_instruction_tokens: list[list[str]],
+    num_cpus: int,
 ) -> list[InstructionSample]:
     """Post-process the response from the model to extract instructions.
 
@@ -242,6 +227,14 @@ def post_process_response(
             Number of prompt instructions used in the request.
         response:
             The response from the model.
+        scorer:
+            The Rouge scorer used to compute similarity scores.
+        previous_instructions:
+            A list of all previously generated instructions.
+        previous_instruction_tokens:
+            A list of tokenized versions of all previously generated instructions.
+        num_cpus:
+            Number of CPUs to use for parallel processing of ROUGE scores.
 
     Returns:
         A list of seed instructions extracted from the response.
@@ -262,111 +255,46 @@ def post_process_response(
             continue
 
         # If the data does not contain the expected format, we skip it
-        splitted_data = re.split(
-            rf"{idx + num_prompt_instructions}\.\s+(Instruktion|Input|Output):", inst
-        )
-        if len(splitted_data) != 7:
+        splitted_data = [
+            part.strip()
+            for part in re.split(
+                rf"{idx + num_prompt_instructions}\.\s+Instruktion|Input|Output:", inst
+            )
+            if part.strip()
+        ]
+        if len(splitted_data) != 3:
             logger.warning(
                 f"Skipping instruction {idx} due to unexpected format: {inst.strip()}"
             )
             continue
 
-        inst = splitted_data[2].strip()
-        input = splitted_data[4].strip()
+        # Extract instruction, input, and output
+        inst, input, output = splitted_data
         input = "" if input.lower() == "<noinput>" else input
-        output = splitted_data[6].strip()
 
-        # If the instruction is too short or too long, we skip it
-        if len(inst.split()) <= 3 or len(inst.split()) > 150:
-            logger.warning(
-                f"Skipping instruction {idx} due to length: {len(inst.split())} words."
+        # Compute the similarity of the new instruction to all existing
+        # instructions
+        new_instruction_tokens = scorer._tokenizer.tokenize(text=inst)
+        with Pool(processes=num_cpus) as p:
+            rouge_scores = p.map(
+                partial(rouge_scorer._score_lcs, new_instruction_tokens),
+                previous_instruction_tokens,
             )
-            continue
-
-        # Filter based on keywords that are not suitable for language models
-        blacklist = [
-            "image",
-            "images",
-            "graph",
-            "graphs",
-            "picture",
-            "pictures",
-            "file",
-            "files",
-            "map",
-            "maps",
-            "draw",
-            "plot",
-            "go to",
-            "video",
-            "audio",
-            "music",
-            "flowchart",
-            "diagram",
-            "billede",
-            "billeder",
-            "graf",
-            "grafer",
-            "foto",
-            "fotos",
-            "fil",
-            "filer",
-            "illustrer",
-            "illustration",
-            "tegning",
-            "gå til",
-            "musik",
-        ]
-        blacklist += []
-        if re.search(
-            pattern=r"\b|\b".join([rf"\b{word}\b" for word in blacklist]),
-            string=inst,
-            flags=re.IGNORECASE,
-        ):
-            logger.warning(
-                f"Skipping instruction {idx} due to blacklisted keywords: "
-                f"{inst.strip()}"
-            )
-            continue
-
-        # We found that the model tends to add "write a program" to some existing
-        # instructions, which lead to a lot of such instructions, and it's a bit
-        # confusing whether the model need to write a program or directly output the
-        # result. Here we filter them out. Note this is not a comprehensive filtering
-        # for all programming instructions.
-        if inst.startswith("Skriv et program"):
-            logger.warning(
-                f"Skipping instruction {idx} due to it starting with "
-                f"'Skriv et program': {inst.strip()}"
-            )
-            continue
-
-        # Filter those starting with punctuation
-        if inst[0] in string.punctuation:
-            logger.warning(
-                f"Skipping instruction {idx} due to it starting with punctuation: "
-                f"{inst.strip()}"
-            )
-            continue
-
-        # Filter those starting with non-Danish character
-        if not inst[0].isascii() and inst[0].lower() not in {"æ", "ø", "å"}:
-            logger.warning(
-                f"Skipping instruction {idx} due to it starting with a non-Danish "
-                f"character: {inst.strip()}"
-            )
-            continue
+        rouge_scores = [score.fmeasure for score in rouge_scores]
+        most_similar_instructions = {
+            previous_instructions[i]: rouge_scores[i]
+            for i in np.argsort(rouge_scores)[-10:][::-1]
+        }
 
         # Store the instruction
         new_instruction = InstructionSample(
-            instruction=inst, input=input, output=output
+            instruction=inst,
+            input=input,
+            output=output,
+            most_similar_instructions=most_similar_instructions,
+            avg_similarity_score=float(np.mean(rouge_scores)),
+            instruction_tokens=new_instruction_tokens,
         )
         instructions.append(new_instruction)
-
-        # Log the generated instruction
-        log_input = f"input: {input}" if input else "no input"
-        logger.info(
-            f"Generated instruction {idx}:\n{inst} ({log_input}, output: {output})"
-        )
 
     return instructions

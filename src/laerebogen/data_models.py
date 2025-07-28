@@ -20,6 +20,8 @@ class InstructionSample:
             with their similarity scores.
         avg_similarity_score:
             The average similarity score of the most similar instructions.
+        instruction_tokens:
+            A list of token IDs representing the instruction.
     """
 
     instruction: str
@@ -27,6 +29,7 @@ class InstructionSample:
     output: str
     most_similar_instructions: dict[str, float] = field(default_factory=dict)
     avg_similarity_score: float = float("nan")
+    instruction_tokens: list[str] = field(default_factory=list)
 
     def json(self) -> str:
         """Convert the instruction sample to a JSON string.

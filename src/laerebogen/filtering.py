@@ -1,0 +1,190 @@
+"""Filtering of generated instructions."""
+
+import logging
+import re
+import string
+
+from lingua import Language, LanguageDetectorBuilder
+
+from .data_models import InstructionSample
+
+logger = logging.getLogger(__name__)
+
+
+def keep_instruction(instruction_sample: InstructionSample) -> bool:
+    """Check if an instruction sample should be kept based on all filters.
+
+    Args:
+        instruction_sample:
+            The instruction sample to check.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    ALL_FILTERS = [
+        not_too_short,
+        not_too_long,
+        does_not_contain_banned_word,
+        does_not_start_with_write_a_program,
+        does_not_start_with_punctuation,
+        starts_with_danish_character,
+        is_danish,
+        is_not_similar_to_existing_instructions,
+    ]
+    for filter_fn in ALL_FILTERS:
+        if not filter_fn(instruction_sample):
+            logger.info(
+                f"Filtering out instruction: {instruction_sample} as it failed the "
+                f"{filter_fn.__name__!r} filter."
+            )
+            return False
+    return True
+
+
+def not_too_short(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that are too short.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    num_instruction_words = len(instruction_sample.instruction.split())
+    return num_instruction_words > 3
+
+
+def not_too_long(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that are too long.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    num_instruction_words = len(instruction_sample.instruction.split())
+    return num_instruction_words < 150
+
+
+def does_not_contain_banned_word(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that contain banned words.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    banned_words = [
+        "flowchart",
+        "diagram",
+        "billede",
+        "billeder",
+        "graf",
+        "grafer",
+        "foto",
+        "fotos",
+        "fil",
+        "filer",
+        "illustrer",
+        "illustration",
+        "tegning",
+        "gå til",
+        "musik",
+    ]
+    return (
+        re.search(
+            pattern=r"\b|\b".join([rf"\b{word}\b" for word in banned_words]),
+            string=instruction_sample.instruction,
+            flags=re.IGNORECASE,
+        )
+        is None
+    )
+
+
+def does_not_start_with_write_a_program(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that starts with 'Skriv et program'.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    return not instruction_sample.instruction.lower().startswith("skriv et program")
+
+
+def does_not_start_with_punctuation(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that start with punctuation.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    return not instruction_sample.instruction.startswith(tuple(string.punctuation))
+
+
+def starts_with_danish_character(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that do not start with a Danish character.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    return instruction_sample.instruction[
+        0
+    ].isascii() and instruction_sample.instruction.lower().startswith(tuple("æøå"))
+
+
+def is_danish(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that are not in Danish.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    detector = LanguageDetectorBuilder.from_languages(
+        Language.DANISH,
+        Language.BOKMAL,
+        Language.NYNORSK,
+        Language.SWEDISH,
+        Language.ENGLISH,
+    ).build()
+    detected_languages = detector.detect_languages_in_parallel_of(
+        texts=[
+            instruction_sample.instruction,
+            instruction_sample.input,
+            instruction_sample.output,
+        ]
+    )
+    return all(lang == Language.DANISH for lang in detected_languages)
+
+
+def is_not_similar_to_existing_instructions(
+    instruction_sample: InstructionSample,
+) -> bool:
+    """Filter out instructions that are too similar to existing instructions.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    max_similarity = max(instruction_sample.most_similar_instructions.values())
+    return max_similarity < 0.7
