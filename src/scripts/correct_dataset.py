@@ -66,6 +66,7 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
     instructions = [
         InstructionSample.from_json(line.strip())
         for line in Path(dataset_path).read_text().splitlines()
+        if line.strip()  # Skip empty lines
     ]
 
     # Correct the dataset
