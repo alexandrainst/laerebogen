@@ -1,7 +1,7 @@
-"""Generate the dataset.
+"""Generate the initial dataset for instruction following.
 
 Usage:
-    python generate_dataset.py \
+    python generate_base_dataset.py \
         [--output-dir <output_dir>] \
         [--prompt-path <prompt_path>] \
         [--seed-tasks-path <seed_tasks_path>] \
