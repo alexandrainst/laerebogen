@@ -24,6 +24,7 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
     all_filters = [
         not_too_short,
         not_too_long,
+        does_not_contain_prompt_words,
         does_not_contain_banned_word,
         does_not_start_with_write_a_program,
         does_not_start_with_punctuation,
@@ -68,6 +69,36 @@ def not_too_long(instruction_sample: InstructionSample) -> bool:
     num_instruction_words = len(instruction_sample.instruction.split())
     num_input_words = len(instruction_sample.input.split())
     return num_instruction_words < 150 and num_input_words < 150
+
+
+def does_not_contain_prompt_words(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that contain prompt words.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    prompt_words_regex = re.compile(pattern=r"[0-9]+\. (Instruktion|Input|Output)")
+    instruction_contains_prompt_words = (
+        re.search(pattern=prompt_words_regex, string=instruction_sample.instruction)
+        is not None
+    )
+    input_contains_prompt_words = (
+        re.search(pattern=prompt_words_regex, string=instruction_sample.input)
+        is not None
+    )
+    output_contains_prompt_words = (
+        re.search(pattern=prompt_words_regex, string=instruction_sample.output)
+        is not None
+    )
+    return (
+        not instruction_contains_prompt_words
+        and not input_contains_prompt_words
+        and not output_contains_prompt_words
+    )
 
 
 def does_not_contain_banned_word(instruction_sample: InstructionSample) -> bool:
