@@ -276,6 +276,11 @@ def post_process_response(
             for i in np.argsort(rouge_scores)[-10:][::-1]
         }
 
+        # Add the new instruction and its tokens to the previous lists, so that future
+        # instructions can be compared to it
+        previous_instructions.append(inst)
+        previous_instruction_tokens.append(new_instruction_tokens)
+
         # Store the instruction
         new_instruction = InstructionSample(
             instruction=inst,
