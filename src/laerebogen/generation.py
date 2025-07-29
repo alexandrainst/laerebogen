@@ -106,9 +106,11 @@ def generate_instruction_following_data(
     scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
 
     # Initialise the progress bar
-    progress_bar = tqdm(total=num_instructions_to_generate)
-    if machine_instruction_data:
-        progress_bar.n = len(machine_instruction_data)
+    progress_bar = tqdm(
+        total=num_instructions_to_generate,
+        initial=len(machine_instruction_data),
+        desc="Generating instructions",
+    )
 
     # First we tokenise all the seed instructions and generated machine instructions
     all_instructions = [
