@@ -50,10 +50,12 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = tokenizer.apply_chat_template(
-        [[dict(role="user", content=prompt)] for prompt in prompts],
-        add_generation_prompt=True,
-    )
+    prompts = [
+        tokenizer.apply_chat_template(
+            [dict(role="user", content=prompt)], add_generation_prompt=True
+        )
+        for prompt in prompts
+    ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
@@ -70,10 +72,12 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = tokenizer.apply_chat_template(
-        [[dict(role="user", content=prompt)] for prompt in prompts],
-        add_generation_prompt=True,
-    )
+    prompts = [
+        tokenizer.apply_chat_template(
+            [dict(role="user", content=prompt)], add_generation_prompt=True
+        )
+        for prompt in prompts
+    ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
@@ -90,10 +94,12 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = tokenizer.apply_chat_template(
-        [[dict(role="user", content=prompt)] for prompt in prompts],
-        add_generation_prompt=True,
-    )
+    prompts = [
+        tokenizer.apply_chat_template(
+            [dict(role="user", content=prompt)], add_generation_prompt=True
+        )
+        for prompt in prompts
+    ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
