@@ -65,7 +65,7 @@ from laerebogen.vllm_utils import load_vllm_model
 @click.option(
     "--num-cpus",
     type=int,
-    default=2,
+    default=-1,
     show_default=True,
     help="Number of CPU cores to use for parallel processing. Set to -1 to use all "
     "available cores.",

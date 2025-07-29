@@ -77,7 +77,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--num-cpus",
     type=int,
-    default=2,
+    default=-1,
     show_default=True,
     help="Number of CPUs to use for parallel processing. Set to -1 to use all "
     "available CPUs.",
