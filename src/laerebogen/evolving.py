@@ -139,7 +139,10 @@ def evolve_instructions(
         .format(instruction=f"{instruction.instruction}\n\n{instruction.input}")
         for instruction in instructions
     ]
-    prompts = tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
+    prompts = tokenizer.apply_chat_template(
+        [dict(role="user", content=prompt) for prompt in prompts],
+        add_generation_prompt=True,
+    )
     evolved_instructions = [
         InstructionSample(instruction=response.completion, input="", output="")
         for response in generate_text_with_vllm(prompts=prompts, model=model)
@@ -173,7 +176,10 @@ def evolve_instructions(
 
     # Get the corresponding outputs
     prompts = tokenizer.apply_chat_template(
-        [instruction.instruction for instruction in evolved_instructions],
+        [
+            dict(role="user", content=instruction.instruction)
+            for instruction in evolved_instructions
+        ],
         add_generation_prompt=True,
     )
     responses = [
