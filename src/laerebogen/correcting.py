@@ -50,12 +50,14 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
+    breakpoint()
     prompts = [
         tokenizer.apply_chat_template(
             [dict(role="user", content=prompt)], add_generation_prompt=True
         )
         for prompt in prompts
     ]
+    breakpoint()
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
