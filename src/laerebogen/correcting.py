@@ -1,5 +1,6 @@
 """Correcting spelling mistakes in text."""
 
+import logging
 from copy import deepcopy
 
 from tqdm.auto import tqdm
@@ -8,6 +9,9 @@ from laerebogen.filtering import keep_instruction
 
 from .data_models import InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
+
+logger = logging.getLogger(__name__)
+
 
 CORRECTION_PROMPT_TEMPLATE = (
     "Skriv følgende #Original Tekst# om, hvor du retter all stavefejl og "
@@ -37,6 +41,7 @@ def correct_instructions(
         The corrected instructions.
     """
     # Load the model and tokenizer
+    logger.info(f"Loading model {model_id!r} for correcting instructions...")
     model = load_vllm_model(model_id=model_id)
     tokenizer = model.get_tokenizer()
 
@@ -44,18 +49,23 @@ def correct_instructions(
     corrected_instructions = deepcopy(instructions)
 
     # Correct the instructions
+    logger.info("Correcting instructions...")
     prompts = [
         CORRECTION_PROMPT_TEMPLATE.format(
             text=instruction.instruction if instruction.instruction else "<empty>"
         )
         for instruction in instructions
     ]
-    breakpoint()
     prompts = [
         tokenizer.apply_chat_template(
             [dict(role="user", content=prompt)], add_generation_prompt=True
         )
-        for prompt in prompts
+        for prompt in tqdm(
+            iterable=prompts,
+            desc="Applying chat template to prompts",
+            unit="prompt",
+            leave=False,
+        )
     ]
     breakpoint()
     responses = generate_text_with_vllm(prompts=prompts, model=model)
@@ -68,6 +78,7 @@ def correct_instructions(
             )
 
     # Correct the inputs
+    logger.info("Correcting inputs...")
     prompts = [
         CORRECTION_PROMPT_TEMPLATE.format(
             text=instruction.input if instruction.input else "<empty>"
@@ -78,7 +89,12 @@ def correct_instructions(
         tokenizer.apply_chat_template(
             [dict(role="user", content=prompt)], add_generation_prompt=True
         )
-        for prompt in prompts
+        for prompt in tqdm(
+            iterable=prompts,
+            desc="Applying chat template to prompts",
+            unit="prompt",
+            leave=False,
+        )
     ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
@@ -90,6 +106,7 @@ def correct_instructions(
             )
 
     # Correct the outputs
+    logger.info("Correcting outputs...")
     prompts = [
         CORRECTION_PROMPT_TEMPLATE.format(
             text=instruction.output if instruction.output else "<empty>"
@@ -100,7 +117,12 @@ def correct_instructions(
         tokenizer.apply_chat_template(
             [dict(role="user", content=prompt)], add_generation_prompt=True
         )
-        for prompt in prompts
+        for prompt in tqdm(
+            iterable=prompts,
+            desc="Applying chat template to prompts",
+            unit="prompt",
+            leave=False,
+        )
     ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
@@ -112,6 +134,7 @@ def correct_instructions(
             )
 
     # Filter the corrected instructions
+    logger.info("Filtering corrected instructions...")
     corrected_instructions = [
         instruction
         for instruction in tqdm(

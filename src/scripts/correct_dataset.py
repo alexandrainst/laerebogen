@@ -60,6 +60,7 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
         format="%(asctime)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    logger = logging.getLogger("correct_dataset")
 
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -67,6 +68,7 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
     warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
+    logger.info(f"Loading dataset from {dataset_path!r}...")
     dataset_path = Path(dataset_path)
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
@@ -80,6 +82,10 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
     with dataset_path.with_suffix(".corrected.jsonl").open("w", encoding="utf-8") as f:
         for instruction in instructions:
             f.write(instruction.json() + "\n")
+    logger.info(
+        "Saved corrected instructions to "
+        f"{dataset_path.with_suffix('.corrected.jsonl')!r}"
+    )
 
 
 if __name__ == "__main__":
