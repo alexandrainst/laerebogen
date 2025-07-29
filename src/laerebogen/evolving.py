@@ -179,7 +179,12 @@ def evolve_instructions(
 
     # Compute the similarity of the evolved instructions to all previous instructions
     previous_instructions = instructions + evolved_instructions
-    for evolved_instruction in evolved_instructions:
+    for evolved_instruction in tqdm(
+        iterable=evolved_instructions,
+        desc="Computing similarity scores",
+        unit="instruction",
+        leave=False,
+    ):
         # Compute the similarity scores
         new_instruction_tokens = scorer._tokenizer.tokenize(
             text=evolved_instruction.instruction
