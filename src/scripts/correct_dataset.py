@@ -93,12 +93,13 @@ def evolve(
     instructions = correct_instructions(
         instructions=instructions, prompt_path=prompt_path, model_id=model
     )
-    with dataset_path.with_suffix(".corrected.jsonl").open("w", encoding="utf-8") as f:
+    corrected_path = dataset_path.with_suffix(".corrected.jsonl")
+    with corrected_path.open("w", encoding="utf-8") as f:
         for instruction in instructions:
             f.write(instruction.json() + "\n")
     logger.info(
-        "Saved corrected instructions to "
-        f"{dataset_path.with_suffix('.corrected.jsonl')!r}"
+        f"Saved {len(instructions):,} corrected instructions to "
+        f"{corrected_path.resolve()!r}"
     )
 
 
