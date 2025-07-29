@@ -185,5 +185,7 @@ def is_not_similar_to_existing_instructions(
     Returns:
         True if the instruction should be kept, False if it should be filtered out.
     """
+    if not instruction_sample.most_similar_instructions:
+        return True
     max_similarity = max(instruction_sample.most_similar_instructions.values())
     return max_similarity < 0.7
