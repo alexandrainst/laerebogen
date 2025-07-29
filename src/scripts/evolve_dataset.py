@@ -109,6 +109,7 @@ def evolve(
         ]
 
     # Load the model
+    logger.info(f"Loading model {model!r} for evolving instructions...")
     vllm_model = load_vllm_model(model_id=model)
 
     # Evolve the dataset
