@@ -2,6 +2,10 @@
 
 from copy import deepcopy
 
+from tqdm.auto import tqdm
+
+from laerebogen.filtering import keep_instruction
+
 from .data_models import InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
@@ -88,5 +92,16 @@ def correct_instructions(
                 if response.completion.strip() != "<empty>"
                 else ""
             )
+
+    # Filter the corrected instructions
+    corrected_instructions = [
+        instruction
+        for instruction in tqdm(
+            iterable=corrected_instructions,
+            desc="Filtering corrected instructions",
+            unit="instruction",
+        )
+        if keep_instruction(instruction_sample=instruction)
+    ]
 
     return corrected_instructions
