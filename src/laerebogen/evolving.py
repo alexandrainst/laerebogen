@@ -9,9 +9,7 @@ complicated and diverse.
 
 import logging
 import random
-import typing as t
 from functools import partial
-from importlib.util import find_spec
 from multiprocessing import Pool
 
 import numpy as np
@@ -19,9 +17,6 @@ from rouge_score import rouge_scorer
 
 from .data_models import InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
-
-if find_spec("vllm") is not None or t.TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 

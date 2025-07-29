@@ -5,22 +5,16 @@ import logging
 import os
 import typing as t
 
+import ray
+import torch
+import transformers.utils.logging as transformers_logging
 from tqdm.auto import tqdm
 
 from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
 from .data_models import Response
 
-if importlib.util.find_spec("transformers") is not None or t.TYPE_CHECKING:
-    import transformers.utils.logging as transformers_logging
-
-if importlib.util.find_spec("torch") is not None or t.TYPE_CHECKING:
-    import torch
-
 if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
     from vllm import LLM, SamplingParams
-
-if importlib.util.find_spec("ray") is not None or t.TYPE_CHECKING:
-    import ray
 
 
 logger = logging.getLogger(__name__)
@@ -79,8 +73,7 @@ def load_vllm_model(model_id: str) -> "LLM":
     logging.getLogger("ray._private.utils").setLevel(logging.CRITICAL)
     os.environ["LOG_LEVEL"] = "CRITICAL"
     os.environ["VLLM_CONFIGURE_LOGGING"] = "0"
-    if importlib.util.find_spec("ray") is not None:
-        ray._private.worker._worker_logs_enabled = False
+    ray._private.worker._worker_logs_enabled = False
 
     return LLM(
         model=model_id,
