@@ -11,7 +11,6 @@ import logging
 import random
 import typing as t
 from functools import partial
-from importlib.util import find_spec
 from multiprocessing import Pool
 from pathlib import Path
 
@@ -23,7 +22,7 @@ from .data_models import InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm
 
-if find_spec("vllm") is None or t.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from vllm import LLM
 
 logger = logging.getLogger(__name__)
