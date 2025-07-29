@@ -118,26 +118,25 @@ def evolve(
         if num_evolutions > 1
         else range(num_evolutions)
     )
+    all_evolutions = [instructions]
     for iteration in pbar:
-        instructions = evolve_instructions(
+        evolved_instructions = evolve_instructions(
             instructions=instructions,
             model=vllm_model,
             num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
         )
-        with dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl").open(
-            "w", encoding="utf-8"
-        ) as f:
-            for instruction in instructions:
+        all_evolutions.append(evolved_instructions)
+        evolution_path = dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl")
+        with evolution_path.open("w", encoding="utf-8") as f:
+            entire_dataset = [
+                instruction for evolution in all_evolutions for instruction in evolution
+            ]
+            for instruction in entire_dataset:
                 f.write(instruction.json() + "\n")
         logger.info(
-            f"Saved evolved instructions for iteration {iteration + 1} to "
-            f"{dataset_path.with_suffix(f'.evolved_{iteration + 1}.jsonl')!r}"
+            f"Saved {len(entire_dataset):,} evolved instructions for iteration "
+            f"{iteration + 1} to {evolution_path!r}."
         )
-    logger.info(
-        "All evolutions completed. The dataset has been evolved "
-        f"{num_evolutions} times and the final dataset is saved to "
-        f"{dataset_path.with_suffix('.evolved_{num_evolutions}.jsonl')!r}"
-    )
 
 
 if __name__ == "__main__":
