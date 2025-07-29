@@ -48,6 +48,26 @@ class InstructionSample:
             ensure_ascii=False,
         )
 
+    @classmethod
+    def from_json(cls, json_str: str) -> "InstructionSample":
+        """Create an instruction sample from a JSON string.
+
+        Args:
+            json_str:
+                A JSON string representation of the instruction sample.
+
+        Returns:
+            An instance of InstructionSample.
+        """
+        data = json.loads(json_str)
+        return cls(
+            instruction=data["instruction"],
+            input=data["input"],
+            output=data["output"],
+            most_similar_instructions=data.get("most_similar_instructions", {}),
+            avg_similarity_score=data.get("avg_similarity_score", float("nan")),
+        )
+
 
 @dataclass
 class Response:
