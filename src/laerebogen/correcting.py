@@ -58,7 +58,9 @@ def correct_instructions(
     ]
     prompts = [
         tokenizer.apply_chat_template(
-            [dict(role="user", content=prompt)], add_generation_prompt=True
+            [dict(role="user", content=prompt)],
+            add_generation_prompt=True,
+            tokenize=False,
         )
         for prompt in tqdm(
             iterable=prompts,
@@ -87,7 +89,9 @@ def correct_instructions(
     ]
     prompts = [
         tokenizer.apply_chat_template(
-            [dict(role="user", content=prompt)], add_generation_prompt=True
+            [dict(role="user", content=prompt)],
+            add_generation_prompt=True,
+            tokenize=False,
         )
         for prompt in tqdm(
             iterable=prompts,
@@ -115,7 +119,9 @@ def correct_instructions(
     ]
     prompts = [
         tokenizer.apply_chat_template(
-            [dict(role="user", content=prompt)], add_generation_prompt=True
+            [dict(role="user", content=prompt)],
+            add_generation_prompt=True,
+            tokenize=False,
         )
         for prompt in tqdm(
             iterable=prompts,
