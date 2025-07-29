@@ -96,6 +96,7 @@ def evolve(
     instructions = [
         InstructionSample.from_json(line.strip())
         for line in Path(dataset_path).read_text().splitlines()
+        if line.strip()
     ]
 
     # Evolve the dataset
