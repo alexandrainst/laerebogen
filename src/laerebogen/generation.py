@@ -21,9 +21,8 @@ import numpy as np
 from rouge_score import rouge_scorer
 from tqdm.auto import tqdm
 
-from laerebogen.filtering import keep_instruction
-
 from .data_models import InstructionSample, Response
+from .filtering import keep_instruction
 from .ollama_utils import generate_text_with_ollama, try_download_ollama_model
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
