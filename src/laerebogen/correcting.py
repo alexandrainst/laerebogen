@@ -36,8 +36,9 @@ def correct_instructions(
     Returns:
         The corrected instructions.
     """
-    # Load the model
+    # Load the model and tokenizer
     model = load_vllm_model(model_id=model_id)
+    tokenizer = model.get_tokenizer()
 
     # Copy the instructions to avoid modifying the original ones
     corrected_instructions = deepcopy(instructions)
@@ -49,7 +50,7 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = model.tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
+    prompts = tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
@@ -66,7 +67,7 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = model.tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
+    prompts = tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
@@ -83,7 +84,7 @@ def correct_instructions(
         )
         for instruction in instructions
     ]
-    prompts = model.tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
+    prompts = tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":

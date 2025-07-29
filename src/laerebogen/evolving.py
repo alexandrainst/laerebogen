@@ -127,8 +127,9 @@ def evolve_instructions(
     Returns:
         The evolved instructions as well as the original instructions, shuffled.
     """
-    # Load the model
+    # Load the model and tokenizer
     model = load_vllm_model(model_id=model_id)
+    tokenizer = model.get_tokenizer()
 
     # Prepare the prompt templates
     templates = [
@@ -143,7 +144,7 @@ def evolve_instructions(
         .format(instruction=f"{instruction.instruction}\n\n{instruction.input}")
         for instruction in instructions
     ]
-    prompts = model.tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
+    prompts = tokenizer.apply_chat_template(prompts, add_generation_prompt=True)
     evolved_instructions = [
         InstructionSample(instruction=response.completion, input="", output="")
         for response in generate_text_with_vllm(prompts=prompts, model=model)
@@ -176,7 +177,7 @@ def evolve_instructions(
         }
 
     # Get the corresponding outputs
-    prompts = model.tokenizer.apply_chat_template(
+    prompts = tokenizer.apply_chat_template(
         [instruction.instruction for instruction in evolved_instructions],
         add_generation_prompt=True,
     )
