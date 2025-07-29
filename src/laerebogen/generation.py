@@ -108,7 +108,7 @@ def generate_instruction_following_data(
     # Initialise the progress bar
     progress_bar = tqdm(total=num_instructions_to_generate)
     if machine_instruction_data:
-        progress_bar.update(len(machine_instruction_data))
+        progress_bar.n = len(machine_instruction_data)
 
     # First we tokenise all the seed instructions and generated machine instructions
     all_instructions = [
