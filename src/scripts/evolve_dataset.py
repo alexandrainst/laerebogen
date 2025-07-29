@@ -24,7 +24,7 @@ from laerebogen.evolving import evolve_instructions
 @click.option(
     "--dataset-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/dataset.jsonl",
+    default="data/dataset.corrected.jsonl",
     show_default=True,
     help="Path to the dataset file.",
 )
@@ -104,13 +104,15 @@ def evolve(
         if num_evolutions > 1
         else range(num_evolutions)
     )
-    for _ in pbar:
+    for iteration in pbar:
         instructions = evolve_instructions(
             instructions=instructions,
             model_id=model,
             num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
         )
-        with dataset_path.open("w", encoding="utf-8") as f:
+        with dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl").open(
+            "w", encoding="utf-8"
+        ) as f:
             for instruction in instructions:
                 f.write(instruction.json() + "\n")
 
