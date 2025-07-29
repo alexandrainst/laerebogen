@@ -145,7 +145,9 @@ def evolve_instructions(
     ]
     prompts = [
         tokenizer.apply_chat_template(
-            [dict(role="user", content=prompt)], add_generation_prompt=True
+            [dict(role="user", content=prompt)],
+            add_generation_prompt=True,
+            tokenize=False,
         )
         for prompt in tqdm(
             iterable=prompts,
@@ -195,6 +197,7 @@ def evolve_instructions(
         tokenizer.apply_chat_template(
             [dict(role="user", content=instruction.instruction)],
             add_generation_prompt=True,
+            tokenize=False,
         )
         for instruction in tqdm(
             iterable=evolved_instructions,
