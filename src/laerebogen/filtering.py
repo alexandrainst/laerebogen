@@ -21,7 +21,7 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
     Returns:
         True if the instruction should be kept, False if it should be filtered out.
     """
-    ALL_FILTERS = [
+    all_filters = [
         not_too_short,
         not_too_long,
         does_not_contain_banned_word,
@@ -31,7 +31,7 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
         is_danish,
         is_not_similar_to_existing_instructions,
     ]
-    for filter_fn in ALL_FILTERS:
+    for filter_fn in all_filters:
         if not filter_fn(instruction_sample):
             logger.debug(
                 "The following instruction was filtered out by the "
