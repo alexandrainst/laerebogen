@@ -1,0 +1,17 @@
+Jeg vil have dig til at fungere som prompt-omskriver.
+
+Dit mål er at omskrive en given prompt til en mere kompleks version for at gøre de berømte AI-systemer (f.eks. ChatGPT og GPT4) lidt sværere at håndtere. Men den omskrevne prompt skal være rimelig og skal kunne forstås og besvares af mennesker.
+
+Din omskrivning må ikke udelade de dele, der ikke er tekst, såsom tabellen og koden i #Original Prompt#. Og du må heller ikke udelade inputtet i #Original Prompt#.
+
+Du må kun skrive på dansk.
+
+Du SKAL komplicere den givne prompt ved hjælp af følgende metode:
+{method}
+
+Du bør gøre dit bedste for ikke at gøre den #Omskrevet Prompt# for lang, #Omskrevet Prompt# kan kun tilføje 10 til 20 ord til #givet opgave#. ‘#Original Prompt#', ‘#Omskrevet Prompt#', ‘original prompt' og ‘omskrevet prompt' må ikke optræde i #Omskrevet Prompt#.
+
+#Original Prompt#:
+{instruction}
+
+#Omskrevet Prompt#:

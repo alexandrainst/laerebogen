@@ -3,6 +3,8 @@
 Usage:
     python evolve_dataset.py \
         [--dataset-path <dataset_path>] \
+        [--correction-prompt-path <correction_prompt_path>] \
+        [--creator-prompt-path <creator_prompt_path>] \
         [--model <model>] \
         [--num-evolutions <num_evolutions>] \
         [--num-cpus <num_cpus>] \
@@ -30,6 +32,20 @@ from laerebogen.vllm_utils import load_vllm_model
     default="data/dataset.corrected.jsonl",
     show_default=True,
     help="Path to the dataset file.",
+)
+@click.option(
+    "--correction-prompt-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/correction_prompt.txt",
+    show_default=True,
+    help="Path to the prompt file for correcting instructions.",
+)
+@click.option(
+    "--creator-prompt-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/creator_prompt.txt",
+    show_default=True,
+    help="Path to the prompt file for creating new instructions.",
 )
 @click.option(
     "--model",
@@ -63,6 +79,8 @@ from laerebogen.vllm_utils import load_vllm_model
 )
 def evolve(
     dataset_path: str | Path,
+    correction_prompt_path: str,
+    creator_prompt_path: str,
     model: str,
     num_evolutions: int,
     num_cpus: int,
@@ -73,6 +91,10 @@ def evolve(
     Args:
         dataset_path:
             Path to the dataset file.
+        correction_prompt_path:
+            Path to the prompt file for correcting instructions.
+        creator_prompt_path:
+            Path to the prompt file for creating new instructions.
         model:
             Model ID of the instruction-tuned large language model to use for evolution.
         num_evolutions:
@@ -123,6 +145,8 @@ def evolve(
         evolved_instructions = evolve_instructions(
             instructions=instructions,
             model=vllm_model,
+            rewriter_prompt_path=correction_prompt_path,
+            creator_prompt_path=creator_prompt_path,
             num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
         )
         all_evolutions.append(evolved_instructions)

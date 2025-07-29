@@ -13,6 +13,7 @@ import typing as t
 from functools import partial
 from importlib.util import find_spec
 from multiprocessing import Pool
+from pathlib import Path
 
 import numpy as np
 from rouge_score import rouge_scorer
@@ -26,46 +27,6 @@ if find_spec("vllm") is None or t.TYPE_CHECKING:
     from vllm import LLM
 
 logger = logging.getLogger(__name__)
-
-
-PROMPT_REWRITER_TEMPLATE = (
-    "Jeg vil have dig til at fungere som prompt-omskriver.\n\n"
-    "Dit mål er at omskrive en given prompt til en mere kompleks version for at "
-    "gøre de berømte AI-systemer (f.eks. ChatGPT og GPT4) lidt sværere at håndtere. "
-    "Men den omskrevne prompt skal være rimelig og skal kunne forstås og besvares af "
-    "mennesker.\n\n"
-    "Din omskrivning må ikke udelade de dele, der ikke er tekst, såsom tabellen og "
-    "koden i #Original Prompt#. Og du må heller ikke udelade inputtet i "
-    "#Original Prompt#.\n\n"
-    "Du må kun skrive på dansk.\n\n"
-    "Du SKAL komplicere den givne prompt ved hjælp af følgende metode:\n"
-    "{method}\n\n"
-    "Du bør gøre dit bedste for ikke at gøre den #Omskrevet Prompt# for lang, "
-    "#Omskrevet Prompt# kan kun tilføje 10 til 20 ord til #givet opgave#. "
-    "‘#Original Prompt#', ‘#Omskrevet Prompt#', ‘original prompt' og "
-    "‘omskrevet prompt' må ikke optræde i #Omskrevet Prompt#.\n\n"
-    "#Original Prompt#:\n"
-    "{instruction}\n\n"
-    "#Omskrevet Prompt#:\n"
-)
-
-
-PROMPT_CREATOR_TEMPLATE = (
-    "Jeg vil have dig til at fungere som prompt-skaber.\n\n"
-    "Dit mål er at lade dig inspirere af #Original Prompt# til at skabe en helt ny "
-    "prompt.\n\n"
-    "Denne nye prompt skal tilhøre samme domæne som #Original Prompt#, men være endnu "
-    "mere sjælden.\n\n"
-    "Længden og sværhedsgraden af #Skabt Prompt# skal være den samme som for den "
-    "#Original Prompt#.\n\n"
-    "#Skabt Prompt# skal være rimelig og skal kunne forstås og besvares af mennesker. "
-    "'#Original Prompt#', '#Skabt Prompt#', 'original prompt' og 'skabt prompt' må "
-    "ikke optræde i #Skabt Prompt#.\n\n"
-    "Du må kun skrive på dansk.\n\n"
-    "#Original Prompt#:\n"
-    "{instruction}\n\n"
-    "#Skabt Prompt#:\n"
-)
 
 
 METHODS = dict(
@@ -113,7 +74,11 @@ FORMATS = [
 
 
 def evolve_instructions(
-    instructions: list[InstructionSample], model: "LLM", num_cpus: int
+    instructions: list[InstructionSample],
+    model: "LLM",
+    rewriter_prompt_path: str,
+    creator_prompt_path: str,
+    num_cpus: int,
 ) -> list[InstructionSample]:
     """Evolve an instruction using an instruction-tuned large language model.
 
@@ -122,6 +87,10 @@ def evolve_instructions(
             The instructions to evolve.
         model:
             The instruction-tuned large language model to use for evolution.
+        rewriter_prompt_path:
+            Path to the prompt file containing the rewriter prompt.
+        creator_prompt_path:
+            Path to the prompt file containing the creator prompt.
         num_cpus:
             The number of CPU cores to use for parallel processing.
 
@@ -131,11 +100,16 @@ def evolve_instructions(
     # Load the tokenizer
     tokenizer = model.get_tokenizer()
 
+    # Load the prompts
+    with Path(rewriter_prompt_path).open() as f:
+        rewriter_prompt = f.read() + "\n"
+    with Path(creator_prompt_path).open() as f:
+        creator_prompt = f.read() + "\n"
+
     # Prepare the prompt templates
     templates = [
-        PROMPT_REWRITER_TEMPLATE.replace("{method}", method)
-        for method in METHODS.values()
-    ] + [PROMPT_CREATOR_TEMPLATE]
+        rewriter_prompt.replace("{method}", method) for method in METHODS.values()
+    ] + [creator_prompt]
 
     # Evolve the instructions
     logger.info("Evolving instructions...")

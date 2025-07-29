@@ -66,11 +66,12 @@ def generate_instruction_following_data(
         num_cpus:
             Number of CPUs to use for parallel processing.
     """
+    logger.info(f"Loading model {model_id!r} for generating instructions...")
     model = load_vllm_model(model_id=model_id)
 
     # Load the prompt
     with Path(prompt_path).open() as f:
-        prompt = f.read()
+        generation_prompt = f.read()
 
     # Load the seed tasks
     with Path(seed_tasks_path).open() as f:
@@ -127,7 +128,7 @@ def generate_instruction_following_data(
                 population=seed_instruction_data, k=num_prompt_instructions
             )
             encoded_prompt = encode_prompt(
-                seed_instructions=seed_instructions, prompt=prompt
+                seed_instructions=seed_instructions, prompt=generation_prompt
             )
             batch_inputs.append(encoded_prompt)
 

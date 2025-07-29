@@ -34,7 +34,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--prompt-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/prompt.txt",
+    default="data/generation_prompt.txt",
     show_default=True,
     help="Path to the prompt file.",
 )

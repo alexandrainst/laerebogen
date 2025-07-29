@@ -1,0 +1,16 @@
+Jeg vil have dig til at fungere som prompt-skaber.
+
+Dit mål er at lade dig inspirere af #Original Prompt# til at skabe en helt ny prompt.
+
+Denne nye prompt skal tilhøre samme domæne som #Original Prompt#, men være endnu mere sjælden.
+
+Længden og sværhedsgraden af #Skabt Prompt# skal være den samme som for #Original Prompt#.
+
+#Skabt Prompt# skal være rimelig og skal kunne forstås og besvares af mennesker. '#Original Prompt#', '#Skabt Prompt#', 'original prompt' og 'skabt prompt' må ikke optræde i #Skabt Prompt#.
+
+Du må kun skrive på dansk.
+
+#Original Prompt#:
+{instruction}
+
+#Skabt Prompt#:

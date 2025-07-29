@@ -2,6 +2,7 @@
 
 import logging
 from copy import deepcopy
+from pathlib import Path
 
 from tqdm.auto import tqdm
 
@@ -12,26 +13,16 @@ from .vllm_utils import generate_text_with_vllm, load_vllm_model
 logger = logging.getLogger(__name__)
 
 
-CORRECTION_PROMPT_TEMPLATE = (
-    "Skriv følgende #Original Tekst# om, hvor du retter all stavefejl og "
-    "grammatiske fejl. Du må kun skrive på dansk, du må ikke ændre betydningen af "
-    "instruktionen, og du skal kun skrive teksten uden yderligere tekst. Du skal "
-    "skrive den rettede tekst under #Rettet Tekst#. Hvis teksten er '<empty>', så "
-    "skal du også skrive '<empty>' under #Rettet Tekst#.\n\n"
-    "#Original Tekst#:\n"
-    "{text}\n\n"
-    "#Rettet Tekst#:\n"
-)
-
-
 def correct_instructions(
-    instructions: list[InstructionSample], model_id: str
+    instructions: list[InstructionSample], prompt_path: str, model_id: str
 ) -> list[InstructionSample]:
     """Correct spelling mistakes using an instruction-tuned large language model.
 
     Args:
         instructions:
             The instructions to correct.
+        prompt_path:
+            Path to the prompt file containing the correction prompt.
         model_id:
             The model ID of the instruction-tuned large language model to use for
             correction.
@@ -44,13 +35,17 @@ def correct_instructions(
     model = load_vllm_model(model_id=model_id)
     tokenizer = model.get_tokenizer()
 
+    # Load the prompt
+    with Path(prompt_path).open() as f:
+        correction_prompt = f.read() + "\n"
+
     # Copy the instructions to avoid modifying the original ones
     corrected_instructions = deepcopy(instructions)
 
     # Correct the instructions
     logger.info("Correcting instructions...")
     prompts = [
-        CORRECTION_PROMPT_TEMPLATE.format(
+        correction_prompt.format(
             text=instruction.instruction if instruction.instruction else "<empty>"
         )
         for instruction in instructions
@@ -80,7 +75,7 @@ def correct_instructions(
     # Correct the inputs
     logger.info("Correcting inputs...")
     prompts = [
-        CORRECTION_PROMPT_TEMPLATE.format(
+        correction_prompt.format(
             text=instruction.input if instruction.input else "<empty>"
         )
         for instruction in instructions
@@ -110,7 +105,7 @@ def correct_instructions(
     # Correct the outputs
     logger.info("Correcting outputs...")
     prompts = [
-        CORRECTION_PROMPT_TEMPLATE.format(
+        correction_prompt.format(
             text=instruction.output if instruction.output else "<empty>"
         )
         for instruction in instructions

@@ -3,6 +3,7 @@
 Usage:
     python correct_dataset.py \
         [--dataset-path <dataset_path>] \
+        [--prompt-path <prompt_path>] \
         [--model <model>] \
         [--verbose]
 """
@@ -27,6 +28,13 @@ from laerebogen.data_models import InstructionSample
     help="Path to the dataset file.",
 )
 @click.option(
+    "--prompt-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/correction_prompt.txt",
+    show_default=True,
+    help="Path to the prompt file.",
+)
+@click.option(
     "--model",
     type=str,
     default="google/gemma-3-27b-it",
@@ -40,12 +48,16 @@ from laerebogen.data_models import InstructionSample
     show_default=True,
     help="Enable verbose logging.",
 )
-def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
+def evolve(
+    dataset_path: str | Path, prompt_path: str, model: str, verbose: bool
+) -> None:
     """Evolve the instruction-following dataset.
 
     Args:
         dataset_path:
             Path to the dataset file.
+        prompt_path:
+            Path to the prompt file.
         model:
             Model ID of the instruction-tuned large language model to use for evolution.
         verbose:
@@ -78,7 +90,9 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
         ]
 
     # Correct the dataset
-    instructions = correct_instructions(instructions=instructions, model_id=model)
+    instructions = correct_instructions(
+        instructions=instructions, prompt_path=prompt_path, model_id=model
+    )
     with dataset_path.with_suffix(".corrected.jsonl").open("w", encoding="utf-8") as f:
         for instruction in instructions:
             f.write(instruction.json() + "\n")
