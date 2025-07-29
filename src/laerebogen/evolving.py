@@ -159,7 +159,7 @@ def evolve_instructions(
         )
     ]
     evolved_instructions = [
-        InstructionSample(instruction=response.completion, input="", output="")
+        InstructionSample(instruction=response.completion.strip(), input="", output="")
         for response in generate_text_with_vllm(prompts=prompts, model=model)
         if response.done_reason == "stop"
     ]
