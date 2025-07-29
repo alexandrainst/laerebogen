@@ -178,7 +178,9 @@ def evolve_instructions(
     ]
 
     # Compute the similarity of the evolved instructions to all previous instructions
+    previous_instructions = instructions + evolved_instructions
     for evolved_instruction in evolved_instructions:
+        # Compute the similarity scores
         new_instruction_tokens = scorer._tokenizer.tokenize(
             text=evolved_instruction.instruction
         )
@@ -188,11 +190,16 @@ def evolve_instructions(
                 instruction_tokens,
             )
         rouge_scores = [score.fmeasure for score in rouge_scores]
+
+        # Update the evolved instruction with the similarity scores
         evolved_instruction.avg_similarity_score = np.mean(rouge_scores).item()
         evolved_instruction.most_similar_instructions = {
-            instructions[i]: rouge_scores[i]
+            previous_instructions[i].instruction: rouge_scores[i]
             for i in np.argsort(rouge_scores)[-10:][::-1]
         }
+
+        # Add the tokens of the evolved instruction to the list of instruction tokens
+        instruction_tokens.append(new_instruction_tokens)
 
     # Get the corresponding outputs
     prompts = [
