@@ -9,7 +9,9 @@ complicated and diverse.
 
 import logging
 import random
+import typing as t
 from functools import partial
+from importlib.util import find_spec
 from multiprocessing import Pool
 
 import numpy as np
@@ -18,7 +20,10 @@ from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
 from .filtering import keep_instruction
-from .vllm_utils import generate_text_with_vllm, load_vllm_model
+from .vllm_utils import generate_text_with_vllm
+
+if find_spec("vllm") is None or t.TYPE_CHECKING:
+    from vllm import LLM
 
 logger = logging.getLogger(__name__)
 
@@ -108,25 +113,22 @@ FORMATS = [
 
 
 def evolve_instructions(
-    instructions: list[InstructionSample], model_id: str, num_cpus: int
+    instructions: list[InstructionSample], model: "LLM", num_cpus: int
 ) -> list[InstructionSample]:
     """Evolve an instruction using an instruction-tuned large language model.
 
     Args:
         instructions:
             The instructions to evolve.
-        model_id:
-            The model ID of the instruction-tuned large language model to use for
-            evolution.
+        model:
+            The instruction-tuned large language model to use for evolution.
         num_cpus:
             The number of CPU cores to use for parallel processing.
 
     Returns:
         The evolved instructions as well as the original instructions, shuffled.
     """
-    # Load the model and tokenizer
-    logger.info(f"Loading model {model_id!r} for evolving instructions...")
-    model = load_vllm_model(model_id=model_id)
+    # Load the tokenizer
     tokenizer = model.get_tokenizer()
 
     # Prepare the prompt templates

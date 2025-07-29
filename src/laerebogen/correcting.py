@@ -5,9 +5,8 @@ from copy import deepcopy
 
 from tqdm.auto import tqdm
 
-from laerebogen.filtering import keep_instruction
-
 from .data_models import InstructionSample
+from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)

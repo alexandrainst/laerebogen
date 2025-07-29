@@ -20,6 +20,7 @@ from tqdm.auto import tqdm
 
 from laerebogen.data_models import InstructionSample
 from laerebogen.evolving import evolve_instructions
+from laerebogen.vllm_utils import load_vllm_model
 
 
 @click.command()
@@ -107,6 +108,9 @@ def evolve(
             InstructionSample.from_json(line.strip()) for line in f if line.strip()
         ]
 
+    # Load the model
+    vllm_model = load_vllm_model(model_id=model)
+
     # Evolve the dataset
     pbar = (
         tqdm(iterable=range(num_evolutions), desc="Evolving dataset", unit="evolution")
@@ -116,7 +120,7 @@ def evolve(
     for iteration in pbar:
         instructions = evolve_instructions(
             instructions=instructions,
-            model_id=model,
+            model=vllm_model,
             num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
         )
         with dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl").open(
