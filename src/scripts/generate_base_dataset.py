@@ -10,7 +10,6 @@ Usage:
         [--num-prompt-instructions <num_prompt_instructions>] \
         [--batch-size <batch_size>] \
         [--num-cpus <num_cpus>] \
-        [--backend <backend>] \
         [--verbose]
 """
 
@@ -18,7 +17,6 @@ import logging
 import multiprocessing as mp
 import os
 import warnings
-from typing import Literal
 
 import click
 
@@ -57,11 +55,10 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--model",
     type=str,
-    default=None,
+    default="google/gemma-3-27b-pt",
     show_default=True,
     help="The model ID of the model to use for generation. Must be a base model, not "
-    "a finetuned one. Defaults to 'llama3.1:70b-text-fp16' when using Ollama, and "
-    "'meta-llama/Llama-3.1-70B' when using vLLM.",
+    "a finetuned one. Defaults to 'google/gemma-3-27b-pt'.",
 )
 @click.option(
     "--num-prompt-instructions",
@@ -85,25 +82,16 @@ from laerebogen.generation import generate_instruction_following_data
     help="Number of CPUs to use for parallel processing. Set to -1 to use all "
     "available CPUs.",
 )
-@click.option(
-    "--backend",
-    type=click.Choice(choices=["ollama", "vllm"], case_sensitive=False),
-    default="ollama",
-    show_default=True,
-    help="The generation backend to use. Can be either 'ollama' or 'vllm'. Note that "
-    "vLLM requires a GPU.",
-)
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
 def generate(
     output_dir: str,
     prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
-    model: str | None,
+    model: str,
     num_prompt_instructions: int,
     batch_size: int,
     num_cpus: int,
-    backend: Literal["ollama", "vllm"],
     verbose: bool,
 ) -> None:
     """Generate the dataset.
@@ -126,8 +114,6 @@ def generate(
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
-        backend:
-            The generation backend to use. Can be either 'ollama' or 'vllm'.
         verbose:
             Enable verbose logging.
     """
@@ -142,13 +128,6 @@ def generate(
     warnings.filterwarnings(action="ignore", category=UserWarning)
     warnings.filterwarnings(action="ignore", category=FutureWarning)
 
-    if model is None:
-        match backend:
-            case "ollama":
-                model = "llama3:70b-text-fp16"
-            case "vllm":
-                model = "meta-llama/Meta-Llama-3-70B"
-
     generate_instruction_following_data(
         output_dir=output_dir,
         prompt_path=prompt_path,
@@ -158,7 +137,6 @@ def generate(
         num_prompt_instructions=num_prompt_instructions,
         batch_size=batch_size,
         num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
-        backend=backend,
     )
 
 

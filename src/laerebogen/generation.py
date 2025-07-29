@@ -11,7 +11,6 @@ import json
 import logging
 import random
 import re
-import typing as t
 from copy import deepcopy
 from functools import partial
 from multiprocessing import Pool
@@ -23,7 +22,6 @@ from tqdm.auto import tqdm
 
 from .data_models import InstructionSample, Response
 from .filtering import keep_instruction
-from .ollama_utils import generate_text_with_ollama, try_download_ollama_model
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)
@@ -38,7 +36,6 @@ def generate_instruction_following_data(
     num_prompt_instructions: int,
     batch_size: int,
     num_cpus: int,
-    backend: t.Literal["ollama", "vllm"],
 ) -> None:
     """Generate instructions following the seed tasks.
 
@@ -60,23 +57,16 @@ def generate_instruction_following_data(
         num_instructions_to_generate:
             Number of instructions to generate.
         model_id:
-            The Ollama model ID of the model to use for generation. Must be a base
-            model, not a finetuned one.
+            The model ID of the model to use for generation. Must be a base model, not a
+            finetuned one.
         num_prompt_instructions:
             Number of instructions to use as prompts for each generated instruction.
         batch_size:
             Number of requests to send to the model at once.
         num_cpus:
             Number of CPUs to use for parallel processing.
-        backend:
-            The generation backend to use. Can be "ollama" or "vllm".
     """
-    # Download the model, if it hasn't been downloaded yet
-    match backend:
-        case "ollama":
-            try_download_ollama_model(model_id=model_id)
-        case "vllm":
-            model = load_vllm_model(model_id=model_id)
+    model = load_vllm_model(model_id=model_id)
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -142,13 +132,7 @@ def generate_instruction_following_data(
             batch_inputs.append(encoded_prompt)
 
         # Generate new instructions with the LLM
-        match backend:
-            case "ollama":
-                responses = generate_text_with_ollama(
-                    prompts=batch_inputs, model_id=model_id
-                )
-            case "vllm":
-                responses = generate_text_with_vllm(prompts=batch_inputs, model=model)
+        responses = generate_text_with_vllm(prompts=batch_inputs, model=model)
 
         # Process the generated instructions
         instruction_data: list[InstructionSample] = []
