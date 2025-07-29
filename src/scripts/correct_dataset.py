@@ -63,11 +63,10 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
     dataset_path = Path(dataset_path)
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
-    instructions = [
-        InstructionSample.from_json(line.strip())
-        for line in Path(dataset_path).read_text().splitlines()
-        if line.strip()
-    ]
+    with dataset_path.open("r", encoding="utf-8") as f:
+        instructions = [
+            InstructionSample.from_json(line.strip()) for line in f if line.strip()
+        ]
 
     # Correct the dataset
     instructions = correct_instructions(instructions=instructions, model_id=model)
