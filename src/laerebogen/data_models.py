@@ -58,8 +58,15 @@ class InstructionSample:
 
         Returns:
             An instance of InstructionSample.
+
+        Raises:
+            ValueError:
+                If the JSON string is invalid.
         """
-        data = json.loads(json_str)
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON string: {json_str!r}") from e
         return cls(
             instruction=data["instruction"],
             input=data["input"],
