@@ -90,6 +90,7 @@ def evolve(
         format="%(asctime)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+    logger = logging.getLogger("evolve_dataset")
 
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -97,6 +98,7 @@ def evolve(
     warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
+    logger.info(f"Loading dataset from {dataset_path!r}...")
     dataset_path = Path(dataset_path)
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
@@ -122,6 +124,15 @@ def evolve(
         ) as f:
             for instruction in instructions:
                 f.write(instruction.json() + "\n")
+        logger.info(
+            f"Saved evolved instructions for iteration {iteration + 1} to "
+            f"{dataset_path.with_suffix(f'.evolved_{iteration + 1}.jsonl')!r}"
+        )
+    logger.info(
+        "All evolutions completed. The dataset has been evolved "
+        f"{num_evolutions} times and the final dataset is saved to "
+        f"{dataset_path.with_suffix('.evolved_{num_evolutions}.jsonl')!r}"
+    )
 
 
 if __name__ == "__main__":

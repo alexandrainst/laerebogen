@@ -14,8 +14,10 @@ from multiprocessing import Pool
 
 import numpy as np
 from rouge_score import rouge_scorer
+from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
+from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)
@@ -123,6 +125,7 @@ def evolve_instructions(
         The evolved instructions as well as the original instructions, shuffled.
     """
     # Load the model and tokenizer
+    logger.info(f"Loading model {model_id!r} for evolving instructions...")
     model = load_vllm_model(model_id=model_id)
     tokenizer = model.get_tokenizer()
 
@@ -133,6 +136,7 @@ def evolve_instructions(
     ] + [PROMPT_CREATOR_TEMPLATE]
 
     # Evolve the instructions
+    logger.info("Evolving instructions...")
     prompts = [
         random.choice(templates)
         .replace("{format}", random.choice(FORMATS))
@@ -143,13 +147,23 @@ def evolve_instructions(
         tokenizer.apply_chat_template(
             [dict(role="user", content=prompt)], add_generation_prompt=True
         )
-        for prompt in prompts
+        for prompt in tqdm(
+            iterable=prompts,
+            desc="Applying chat template to prompts",
+            unit="prompt",
+            leave=False,
+        )
     ]
     evolved_instructions = [
         InstructionSample(instruction=response.completion, input="", output="")
         for response in generate_text_with_vllm(prompts=prompts, model=model)
         if response.done_reason == "stop"
     ]
+
+    logger.info(
+        f"Computing similarity scores for {len(evolved_instructions):,} evolved "
+        "instructions against the original instructions..."
+    )
 
     # Tokenize the previous instructions, to check for similarity of the evolved
     # instructions with the previous ones
@@ -182,12 +196,29 @@ def evolve_instructions(
             [dict(role="user", content=instruction.instruction)],
             add_generation_prompt=True,
         )
-        for instruction in evolved_instructions
+        for instruction in tqdm(
+            iterable=evolved_instructions,
+            desc="Applying chat template to prompts",
+            unit="prompt",
+            leave=False,
+        )
     ]
     responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, output in zip(evolved_instructions, responses):
         if output.done_reason == "stop":
             instruction.output = output.completion.strip()
+
+    # Filter the evolved instructions
+    logger.info("Filtering evolved instructions...")
+    evolved_instructions = [
+        instruction
+        for instruction in tqdm(
+            iterable=evolved_instructions,
+            desc="Filtering evolved instructions",
+            unit="instruction",
+        )
+        if keep_instruction(instruction_sample=instruction)
+    ]
 
     # Shuffle the evolved samples and the original samples
     all_samples = evolved_instructions + instructions
