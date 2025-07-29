@@ -51,7 +51,7 @@ def correct_instructions(
         for instruction in instructions
     ]
     prompts = tokenizer.apply_chat_template(
-        [dict(role="user", content=prompt) for prompt in prompts],
+        [[dict(role="user", content=prompt)] for prompt in prompts],
         add_generation_prompt=True,
     )
     responses = generate_text_with_vllm(prompts=prompts, model=model)
@@ -71,7 +71,7 @@ def correct_instructions(
         for instruction in instructions
     ]
     prompts = tokenizer.apply_chat_template(
-        [dict(role="user", content=prompt) for prompt in prompts],
+        [[dict(role="user", content=prompt)] for prompt in prompts],
         add_generation_prompt=True,
     )
     responses = generate_text_with_vllm(prompts=prompts, model=model)
@@ -91,7 +91,7 @@ def correct_instructions(
         for instruction in instructions
     ]
     prompts = tokenizer.apply_chat_template(
-        [dict(role="user", content=prompt) for prompt in prompts],
+        [[dict(role="user", content=prompt)] for prompt in prompts],
         add_generation_prompt=True,
     )
     responses = generate_text_with_vllm(prompts=prompts, model=model)

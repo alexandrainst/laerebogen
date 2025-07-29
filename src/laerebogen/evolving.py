@@ -140,7 +140,7 @@ def evolve_instructions(
         for instruction in instructions
     ]
     prompts = tokenizer.apply_chat_template(
-        [dict(role="user", content=prompt) for prompt in prompts],
+        [[dict(role="user", content=prompt)] for prompt in prompts],
         add_generation_prompt=True,
     )
     evolved_instructions = [
@@ -177,7 +177,7 @@ def evolve_instructions(
     # Get the corresponding outputs
     prompts = tokenizer.apply_chat_template(
         [
-            dict(role="user", content=instruction.instruction)
+            [dict(role="user", content=instruction.instruction)]
             for instruction in evolved_instructions
         ],
         add_generation_prompt=True,
