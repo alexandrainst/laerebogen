@@ -212,6 +212,7 @@ def evolve_instructions(
         instruction_tokens.append(new_instruction_tokens)
 
     # Get the corresponding outputs
+    logger.info("Generating outputs for evolved instructions...")
     prompts = [
         tokenizer.apply_chat_template(
             [dict(role="user", content=instruction.instruction)],
