@@ -184,9 +184,7 @@ def evolve_instructions(
         )
         for instruction in evolved_instructions
     ]
-    responses = [
-        response for response in generate_text_with_vllm(prompts=prompts, model=model)
-    ]
+    responses = generate_text_with_vllm(prompts=prompts, model=model)
     for instruction, output in zip(evolved_instructions, responses):
         if output.done_reason == "stop":
             instruction.output = output.completion.strip()
