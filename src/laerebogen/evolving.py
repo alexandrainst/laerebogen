@@ -174,7 +174,12 @@ def evolve_instructions(
     scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
     instruction_tokens = [
         scorer._tokenizer.tokenize(text=instruction.instruction)
-        for instruction in instructions
+        for instruction in tqdm(
+            iterable=instructions,
+            desc="Tokenising original instructions",
+            unit="instruction",
+            leave=False,
+        )
     ]
 
     # Compute the similarity of the evolved instructions to all previous instructions
