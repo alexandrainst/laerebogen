@@ -8,6 +8,8 @@ Usage:
 """
 
 import logging
+import os
+import warnings
 from pathlib import Path
 
 import click
@@ -58,6 +60,11 @@ def evolve(dataset_path: str | Path, model: str, verbose: bool) -> None:
         format="%(asctime)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    warnings.filterwarnings(action="ignore", category=UserWarning)
+    warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
     dataset_path = Path(dataset_path)

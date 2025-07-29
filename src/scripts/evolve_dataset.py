@@ -11,6 +11,8 @@ Usage:
 
 import logging
 import multiprocessing as mp
+import os
+import warnings
 from pathlib import Path
 
 import click
@@ -88,6 +90,11 @@ def evolve(
         format="%(asctime)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    logging.getLogger("httpx").setLevel(logging.CRITICAL)
+    os.environ["TOKENIZERS_PARALLELISM"] = "false"
+    warnings.filterwarnings(action="ignore", category=UserWarning)
+    warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
     dataset_path = Path(dataset_path)
