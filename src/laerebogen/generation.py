@@ -230,6 +230,11 @@ def post_process_response(
     Returns:
         A list of seed instructions extracted from the response.
     """
+    # Copy previous_instructions and previous_instruction_tokens to avoid modifying the
+    # original lists
+    previous_instructions = deepcopy(previous_instructions)
+    previous_instruction_tokens = deepcopy(previous_instruction_tokens)
+
     raw_instructions = re.split(
         pattern=r"###",
         string=f"{num_prompt_instructions + 1}. Instruktion:" + response.completion,
