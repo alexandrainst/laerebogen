@@ -7,12 +7,10 @@ Usage:
         [--creator-prompt-path <creator_prompt_path>] \
         [--model <model>] \
         [--num-evolutions <num_evolutions>] \
-        [--num-cpus <num_cpus>] \
         [--verbose]
 """
 
 import logging
-import multiprocessing as mp
 import os
 import warnings
 from pathlib import Path
@@ -63,14 +61,6 @@ from laerebogen.vllm_utils import load_vllm_model
     "1 + num_evolutions times larger than the original dataset.",
 )
 @click.option(
-    "--num-cpus",
-    type=int,
-    default=-1,
-    show_default=True,
-    help="Number of CPU cores to use for parallel processing. Set to -1 to use all "
-    "available cores.",
-)
-@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -83,7 +73,6 @@ def evolve(
     creator_prompt_path: str,
     model: str,
     num_evolutions: int,
-    num_cpus: int,
     verbose: bool,
 ) -> None:
     """Evolve the instruction-following dataset.
@@ -99,8 +88,6 @@ def evolve(
             Model ID of the instruction-tuned large language model to use for evolution.
         num_evolutions:
             Number of times to evolve the dataset.
-        num_cpus:
-            Number of CPU cores to use for parallel processing.
         verbose:
             Enable verbose logging.
 
@@ -147,7 +134,6 @@ def evolve(
             model=vllm_model,
             rewriter_prompt_path=correction_prompt_path,
             creator_prompt_path=creator_prompt_path,
-            num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
         )
         all_evolutions.append(evolved_instructions)
         evolution_path = dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl")

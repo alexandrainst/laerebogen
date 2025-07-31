@@ -10,12 +10,8 @@ complicated and diverse.
 import logging
 import random
 import typing as t
-from functools import partial
-from multiprocessing import Pool
 from pathlib import Path
 
-import numpy as np
-from rouge_score import rouge_scorer
 from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
@@ -77,7 +73,6 @@ def evolve_instructions(
     model: "LLM",
     rewriter_prompt_path: str,
     creator_prompt_path: str,
-    num_cpus: int,
 ) -> list[InstructionSample]:
     """Evolve an instruction using an instruction-tuned large language model.
 
@@ -90,8 +85,6 @@ def evolve_instructions(
             Path to the prompt file containing the rewriter prompt.
         creator_prompt_path:
             Path to the prompt file containing the creator prompt.
-        num_cpus:
-            The number of CPU cores to use for parallel processing.
 
     Returns:
         The evolved instructions as well as the original instructions, shuffled.
@@ -141,48 +134,6 @@ def evolve_instructions(
         f"Computing similarity scores for {len(evolved_instructions):,} evolved "
         "instructions against the original instructions..."
     )
-
-    # Tokenize the previous instructions, to check for similarity of the evolved
-    # instructions with the previous ones
-    scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
-    instruction_tokens = [
-        scorer._tokenizer.tokenize(text=instruction.instruction)
-        for instruction in tqdm(
-            iterable=instructions,
-            desc="Tokenising original instructions",
-            unit="instruction",
-            leave=False,
-        )
-    ]
-
-    # Compute the similarity of the evolved instructions to all previous instructions
-    previous_instructions = instructions + evolved_instructions
-    for evolved_instruction in tqdm(
-        iterable=evolved_instructions,
-        desc="Computing similarity scores",
-        unit="instruction",
-        leave=False,
-    ):
-        # Compute the similarity scores
-        new_instruction_tokens = scorer._tokenizer.tokenize(
-            text=evolved_instruction.instruction
-        )
-        with Pool(processes=num_cpus) as p:
-            rouge_scores = p.map(
-                partial(rouge_scorer._score_lcs, new_instruction_tokens),
-                instruction_tokens,
-            )
-        rouge_scores = [score.fmeasure for score in rouge_scores]
-
-        # Update the evolved instruction with the similarity scores
-        evolved_instruction.avg_similarity_score = np.mean(rouge_scores).item()
-        evolved_instruction.most_similar_instructions = {
-            previous_instructions[i].instruction: rouge_scores[i]
-            for i in np.argsort(rouge_scores)[-10:][::-1]
-        }
-
-        # Add the tokens of the evolved instruction to the list of instruction tokens
-        instruction_tokens.append(new_instruction_tokens)
 
     # Get the corresponding outputs
     logger.info("Generating outputs for evolved instructions...")
