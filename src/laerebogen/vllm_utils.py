@@ -8,6 +8,7 @@ import typing as t
 import ray
 import torch
 import transformers.utils.logging as transformers_logging
+from pydantic import BaseModel
 from tqdm.auto import tqdm
 
 from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
@@ -20,7 +21,9 @@ if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
+def generate_text_with_vllm(
+    prompts: list[str], model: "LLM", response_format: t.Type[BaseModel] | None = None
+) -> list[Response]:
     """Decode with vLLM.
 
     Args:
@@ -28,6 +31,9 @@ def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
             A list of strings to complete.
         model:
             The vLLM model.
+        response_format (optional):
+            A Pydantic model to force the response format of the completions. If None,
+            then no formatting is applied. Defaults to None.
 
     Returns:
         A list of responses.
@@ -39,6 +45,7 @@ def generate_text_with_vllm(prompts: list[str], model: "LLM") -> list[Response]:
         prompts=prompts,
         sampling_params=sampling_params,
         use_tqdm=get_pbar_without_leave,
+        response_format=response_format,
     )
     completions = [
         Response(

@@ -1,0 +1,25 @@
+Jeg vil have dig til at fungere som en professionel prompt-tjekker og -skriver.
+
+Du er givet følgende #Original Prompt#, og du skal vurdere, om den er af god kvalitet.
+Hvis den ikke er, skal du skrive prompten om, så den er af høj kvalitet, men uden at
+ændre betydningen af prompten.
+
+God kvalitet betyder, at instruktionen og inputtet er klare, præcise og lette at forstå,
+og at outputtet er et passende svar på instruktionen og inputtet. Inputtet må gerne være
+tomt, hvis det ikke er nødvendigt for instruktionen.
+
+Du må kun skrive på dansk.
+
+Du skal skrive den rettede prompt under #Rettet Prompt#. Du skal skrive et JSON-objekt,
+mder indeholder følgende felter:
+    - "instruction": den rettede instruktion,
+    - "input": det rettede input, som gerne må være tomt,
+    - "output": det rettede output.
+
+Hvis den original prompt er af fin kvalitet allerede, så kan du blot skrive den samme
+prompt under #Rettet Prompt#.
+
+#Original Prompt#:
+{prompt}
+
+#Rettet Prompt#:
