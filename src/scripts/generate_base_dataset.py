@@ -70,7 +70,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--batch-size",
     type=int,
-    default=128,
+    default=512,
     show_default=True,
     help="Number of requests to send to the model at once.",
 )
