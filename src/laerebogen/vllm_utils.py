@@ -10,6 +10,7 @@ import torch
 import transformers.utils.logging as transformers_logging
 from pydantic import BaseModel
 from tqdm.auto import tqdm
+from vllm.sampling_params import GuidedDecodingParams
 
 from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
 from .data_models import Response
@@ -39,13 +40,15 @@ def generate_text_with_vllm(
         A list of responses.
     """
     sampling_params = SamplingParams(
-        stop=STOP_TOKENS, temperature=TEMPERATURE, max_tokens=MAX_CONTEXT_LENGTH
+        stop=STOP_TOKENS,
+        temperature=TEMPERATURE,
+        max_tokens=MAX_CONTEXT_LENGTH,
+        guided_decoding=GuidedDecodingParams(json=response_format.model_json_schema())
+        if response_format is not None
+        else None,
     )
     request_outputs = model.generate(
-        prompts=prompts,
-        sampling_params=sampling_params,
-        use_tqdm=get_pbar_without_leave,
-        response_format=response_format,
+        prompts, sampling_params=sampling_params, use_tqdm=get_pbar_without_leave
     )
     completions = [
         Response(
