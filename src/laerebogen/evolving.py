@@ -10,6 +10,7 @@ complicated and diverse.
 import logging
 import random
 import typing as t
+from copy import deepcopy
 from pathlib import Path
 
 from tqdm.auto import tqdm
@@ -89,6 +90,9 @@ def evolve_instructions(
     Returns:
         The evolved instructions as well as the original instructions, shuffled.
     """
+    # Deep copy the instructions to avoid side effects
+    instructions = deepcopy(instructions)
+
     # Load the tokenizer
     tokenizer = model.get_tokenizer()
 
@@ -162,8 +166,4 @@ def evolve_instructions(
         if keep_instruction(instruction_sample=instruction)
     ]
 
-    # Shuffle the evolved samples and the original samples
-    all_samples = evolved_instructions + instructions
-    random.shuffle(all_samples)
-
-    return all_samples
+    return evolved_instructions
