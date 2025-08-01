@@ -12,6 +12,7 @@ Usage:
 
 import logging
 import os
+import random
 import warnings
 from pathlib import Path
 
@@ -67,7 +68,7 @@ from laerebogen.vllm_utils import load_vllm_model
     show_default=True,
     help="Enable verbose logging.",
 )
-def evolve(
+def main(
     dataset_path: str | Path,
     rewriter_prompt_path: str,
     creator_prompt_path: str,
@@ -143,6 +144,7 @@ def evolve(
             entire_dataset = [
                 instruction for evolution in all_evolutions for instruction in evolution
             ]
+            random.shuffle(entire_dataset)
             for instruction in entire_dataset:
                 f.write(instruction.json() + "\n")
         logger.info(
@@ -152,4 +154,4 @@ def evolve(
 
 
 if __name__ == "__main__":
-    evolve()
+    main()

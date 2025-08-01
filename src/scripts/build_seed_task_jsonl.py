@@ -44,9 +44,7 @@ logger = logging.getLogger("build_seed_task_jsonl")
     show_default=True,
     help="Directory to save the output JSONL file.",
 )
-def build_seed_task_jsonl(
-    alpaca_path: str, trustllm_path: str, output_dir: str
-) -> None:
+def main(alpaca_path: str, trustllm_path: str, output_dir: str) -> None:
     """Convert raw CSV seed task spreadsheets to a single JSONL file.
 
     Args:
@@ -191,4 +189,4 @@ def process_trustllm_data(df: pd.DataFrame) -> list[dict[str, str]]:
 
 
 if __name__ == "__main__":
-    build_seed_task_jsonl()
+    main()

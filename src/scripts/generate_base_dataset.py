@@ -83,7 +83,7 @@ from laerebogen.generation import generate_instruction_following_data
     "available CPUs.",
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
-def generate(
+def main(
     output_dir: str,
     prompt_path: str,
     seed_tasks_path: str,
@@ -141,4 +141,4 @@ def generate(
 
 
 if __name__ == "__main__":
-    generate()
+    main()

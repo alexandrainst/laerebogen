@@ -48,10 +48,8 @@ from laerebogen.data_models import InstructionSample
     show_default=True,
     help="Enable verbose logging.",
 )
-def evolve(
-    dataset_path: str | Path, prompt_path: str, model: str, verbose: bool
-) -> None:
-    """Evolve the instruction-following dataset.
+def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) -> None:
+    """Correct grammatical mistakes in a generated instruction-following dataset.
 
     Args:
         dataset_path:
@@ -108,4 +106,4 @@ def evolve(
 
 
 if __name__ == "__main__":
-    evolve()
+    main()
