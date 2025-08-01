@@ -32,11 +32,11 @@ from laerebogen.vllm_utils import load_vllm_model
     help="Path to the dataset file.",
 )
 @click.option(
-    "--correction-prompt-path",
+    "--rewriter-prompt-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/correction_prompt.txt",
+    default="data/rewriter_prompt.txt",
     show_default=True,
-    help="Path to the prompt file for correcting instructions.",
+    help="Path to the prompt file for rewriting instructions.",
 )
 @click.option(
     "--creator-prompt-path",
@@ -69,7 +69,7 @@ from laerebogen.vllm_utils import load_vllm_model
 )
 def evolve(
     dataset_path: str | Path,
-    correction_prompt_path: str,
+    rewriter_prompt_path: str,
     creator_prompt_path: str,
     model: str,
     num_evolutions: int,
@@ -80,8 +80,8 @@ def evolve(
     Args:
         dataset_path:
             Path to the dataset file.
-        correction_prompt_path:
-            Path to the prompt file for correcting instructions.
+        rewriter_prompt_path:
+            Path to the prompt file for rewriting instructions.
         creator_prompt_path:
             Path to the prompt file for creating new instructions.
         model:
@@ -132,7 +132,7 @@ def evolve(
         evolved_instructions = evolve_instructions(
             instructions=instructions,
             model=vllm_model,
-            rewriter_prompt_path=correction_prompt_path,
+            rewriter_prompt_path=rewriter_prompt_path,
             creator_prompt_path=creator_prompt_path,
         )
         all_evolutions.append(evolved_instructions)
