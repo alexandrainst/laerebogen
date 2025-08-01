@@ -95,7 +95,9 @@ def evolve(
     )
 
     # Store the corrected instructions
-    corrected_path = dataset_path.with_suffix(".quality_corrected.jsonl")
+    corrected_path = dataset_path.with_name(
+        dataset_path.stem + ".quality_corrected.jsonl"
+    )
     with corrected_path.open("w", encoding="utf-8") as f:
         for instruction in instructions:
             f.write(instruction.json() + "\n")

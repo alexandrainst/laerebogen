@@ -136,7 +136,9 @@ def evolve(
             creator_prompt_path=creator_prompt_path,
         )
         all_evolutions.append(evolved_instructions)
-        evolution_path = dataset_path.with_suffix(f".evolved_{iteration + 1}.jsonl")
+        evolution_path = dataset_path.with_name(
+            dataset_path.stem + f".evolved_{iteration + 1}.jsonl"
+        )
         with evolution_path.open("w", encoding="utf-8") as f:
             entire_dataset = [
                 instruction for evolution in all_evolutions for instruction in evolution
