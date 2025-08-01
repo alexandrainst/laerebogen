@@ -130,11 +130,6 @@ def evolve_instructions(
         if response.done_reason == "stop"
     ]
 
-    logger.info(
-        f"Computing similarity scores for {len(evolved_instructions):,} evolved "
-        "instructions against the original instructions..."
-    )
-
     # Get the corresponding outputs
     logger.info("Generating outputs for evolved instructions...")
     prompts = [
