@@ -1,10 +1,11 @@
 """Correcting generated instructions."""
 
+import json
 import logging
 from copy import deepcopy
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
@@ -211,9 +212,12 @@ def correct_bad_quality_instructions(
     )
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
-            new_instruction = ResponseFormat.model_validate_json(
-                json_data=response.completion
-            )
+            try:
+                new_instruction = ResponseFormat.model_validate_json(
+                    json_data=response.completion
+                )
+            except (json.JSONDecodeError, ValidationError):
+                continue
             instruction.instruction = new_instruction.instruction.strip()
             instruction.input = new_instruction.input.strip()
             instruction.output = new_instruction.output.strip()
