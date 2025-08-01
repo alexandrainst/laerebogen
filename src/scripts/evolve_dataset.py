@@ -27,7 +27,7 @@ from laerebogen.vllm_utils import load_vllm_model
 @click.option(
     "--dataset-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/dataset.corrected.jsonl",
+    default="data/dataset.quality_corrected.jsonl",
     show_default=True,
     help="Path to the dataset file.",
 )

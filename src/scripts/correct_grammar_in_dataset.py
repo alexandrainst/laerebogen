@@ -1,7 +1,7 @@
-"""Correct a generated instruction-following dataset.
+"""Correct grammatical mistakes in a generated instruction-following dataset.
 
 Usage:
-    python correct_dataset.py \
+    python correct_grammar_in_dataset.py \
         [--dataset-path <dataset_path>] \
         [--prompt-path <prompt_path>] \
         [--model <model>] \
@@ -15,10 +15,7 @@ from pathlib import Path
 
 import click
 
-from laerebogen.correction import (
-    correct_bad_quality_instructions,
-    correct_grammar_in_instructions,
-)
+from laerebogen.correction import correct_grammar_in_instructions
 from laerebogen.data_models import InstructionSample
 
 
@@ -31,18 +28,11 @@ from laerebogen.data_models import InstructionSample
     help="Path to the dataset file.",
 )
 @click.option(
-    "--grammar-correction-prompt-path",
+    "--prompt-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
     default="data/grammar_correction_prompt.txt",
     show_default=True,
     help="Path to the grammar correction prompt file.",
-)
-@click.option(
-    "--quality-correction-prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/quality_correction_prompt.txt",
-    show_default=True,
-    help="Path to the quality correction prompt file.",
 )
 @click.option(
     "--model",
@@ -59,21 +49,15 @@ from laerebogen.data_models import InstructionSample
     help="Enable verbose logging.",
 )
 def evolve(
-    dataset_path: str | Path,
-    grammar_correction_prompt_path: str,
-    quality_correction_prompt_path: str,
-    model: str,
-    verbose: bool,
+    dataset_path: str | Path, prompt_path: str, model: str, verbose: bool
 ) -> None:
     """Evolve the instruction-following dataset.
 
     Args:
         dataset_path:
             Path to the dataset file.
-        grammar_correction_prompt_path:
+        prompt_path:
             Path to the grammar correction prompt file.
-        quality_correction_prompt_path:
-            Path to the quality correction prompt file.
         model:
             Model ID of the instruction-tuned large language model to use for evolution.
         verbose:
@@ -107,18 +91,11 @@ def evolve(
 
     # Correct the dataset
     instructions = correct_grammar_in_instructions(
-        instructions=instructions,
-        prompt_path=grammar_correction_prompt_path,
-        model_id=model,
-    )
-    instructions = correct_bad_quality_instructions(
-        instructions=instructions,
-        prompt_path=grammar_correction_prompt_path,
-        model_id=model,
+        instructions=instructions, prompt_path=prompt_path, model_id=model
     )
 
     # Store the corrected instructions
-    corrected_path = dataset_path.with_suffix(".corrected.jsonl")
+    corrected_path = dataset_path.with_suffix(".grammar_corrected.jsonl")
     with corrected_path.open("w", encoding="utf-8") as f:
         for instruction in instructions:
             f.write(instruction.json() + "\n")

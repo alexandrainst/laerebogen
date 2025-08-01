@@ -29,7 +29,8 @@ help:
 dataset: ## Generate the dataset
 	@echo "Generating the dataset..."
 	@uv run src/scripts/generate_base_dataset.py && \
-		uv run src/scripts/correct_dataset.py && \
+		uv run src/scripts/correct_grammar_in_dataset.py && \
+		uv run src/scripts/correct_quality_in_dataset.py && \
 		uv run src/scripts/evolve_dataset.py && \
 		uv run src/scripts/push_to_hub.py data/dataset.evolved_4.jsonl
 	@echo "Dataset generated successfully!"
