@@ -13,6 +13,7 @@ Usage:
 import logging
 import os
 import random
+import re
 import warnings
 from pathlib import Path
 
@@ -138,7 +139,7 @@ def main(
         )
         all_evolutions.append(evolved_instructions)
         evolution_path = dataset_path.with_name(
-            dataset_path.stem + f".evolved_{iteration + 1}.jsonl"
+            re.sub(r"\..+", "", dataset_path.stem) + f".evolved_{iteration + 1}.jsonl"
         )
         with evolution_path.open("w", encoding="utf-8") as f:
             entire_dataset = [

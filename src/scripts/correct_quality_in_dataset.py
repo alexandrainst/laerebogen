@@ -10,6 +10,7 @@ Usage:
 
 import logging
 import os
+import re
 import warnings
 from pathlib import Path
 
@@ -94,7 +95,7 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
 
     # Store the corrected instructions
     corrected_path = dataset_path.with_name(
-        dataset_path.stem + ".quality_corrected.jsonl"
+        re.sub(r"\..+", "", dataset_path.stem) + ".quality_corrected.jsonl"
     )
     with corrected_path.open("w", encoding="utf-8") as f:
         for instruction in instructions:
