@@ -12,7 +12,7 @@ from datasets import Dataset, load_dataset
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
 )
-logger = logging.getLogger("build_seed_task_jsonl")
+logger = logging.getLogger("push_to_hub")
 
 
 @click.command()
@@ -48,11 +48,14 @@ def main(
     """
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path, split="train")
-    dataset = dataset.remove_columns(column_names="most_similar_instructions")
+    assert isinstance(dataset, Dataset)
+    logger.info(f"Dataset loaded with {len(dataset):,} examples.")
+
+    if "most_similar_instructions" in dataset.column_names:
+        dataset = dataset.remove_columns(column_names="most_similar_instructions")
     assert isinstance(dataset, Dataset), (
         f"Expected dataset to be of type 'Dataset', but got {type(dataset)}."
     )
-    logger.info(f"Dataset loaded with {len(dataset):,} examples.")
 
     logger.info(f"Pushing dataset to Hugging Face Hub at {repo_id!r}...")
     dataset.push_to_hub(repo_id, private=private)
