@@ -130,28 +130,29 @@ def main(
         else range(num_evolutions)
     )
     all_evolutions = [instructions]
-    for iteration in pbar:
+    for _ in pbar:
         evolved_instructions = evolve_instructions(
-            instructions=instructions,
+            instructions=all_evolutions[-1],
             model=vllm_model,
             rewriter_prompt_path=rewriter_prompt_path,
             creator_prompt_path=creator_prompt_path,
         )
         all_evolutions.append(evolved_instructions)
-        evolution_path = dataset_path.with_name(
-            re.sub(r"\..+", "", dataset_path.stem) + f".evolved_{iteration + 1}.jsonl"
-        )
-        with evolution_path.open("w", encoding="utf-8") as f:
-            entire_dataset = [
-                instruction for evolution in all_evolutions for instruction in evolution
-            ]
-            random.shuffle(entire_dataset)
-            for instruction in entire_dataset:
-                f.write(instruction.json() + "\n")
-        logger.info(
-            f"Saved {len(entire_dataset):,} evolved instructions for iteration "
-            f"{iteration + 1} to {evolution_path!r}."
-        )
+
+    # Save the evolved dataset
+    evolution_path = dataset_path.with_name(
+        re.sub(r"\..+", "", dataset_path.stem) + ".evolved.jsonl"
+    )
+    with evolution_path.open("w", encoding="utf-8") as f:
+        entire_dataset = [
+            instruction for evolution in all_evolutions for instruction in evolution
+        ]
+        random.shuffle(entire_dataset)
+        for instruction in entire_dataset:
+            f.write(instruction.json() + "\n")
+    logger.info(
+        f"Saved {len(entire_dataset):,} evolved instructions to {evolution_path!r}."
+    )
 
 
 if __name__ == "__main__":
