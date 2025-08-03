@@ -33,7 +33,7 @@ dataset: ## Generate the dataset
 		uv run src/scripts/correct_quality_in_dataset.py && \
 		uv run src/scripts/evolve_dataset.py && \
 		uv run src/scripts/add_follow_ups.py && \
-		uv run src/scripts/push_to_hub.py data/dataset.evolved_4.jsonl
+		uv run src/scripts/push_to_hub.py
 	@echo "Dataset generated successfully!"
 
 install: ## Install dependencies
