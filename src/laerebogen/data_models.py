@@ -28,13 +28,13 @@ class Conversation:
         """
         self.messages.append({"role": role, "content": content})
 
-    def to_json(self) -> str:
+    def json(self) -> str:
         """Convert the conversation to a JSON string.
 
         Returns:
             A JSON string representation of the conversation.
         """
-        return json.dumps(self.messages, ensure_ascii=False)
+        return json.dumps(self, ensure_ascii=False)
 
     @classmethod
     def from_json(cls, json_str: str) -> "Conversation":
@@ -49,13 +49,26 @@ class Conversation:
 
         Raises:
             ValueError:
-                If the JSON string is invalid.
+                If the JSON string is invalid or does not contain the expected
+                structure.
         """
         try:
-            messages = json.loads(json_str)
+            conversation = json.loads(json_str)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON string: {json_str!r}") from e
-        return cls(messages=messages)
+        if not isinstance(conversation, dict):
+            raise ValueError(
+                f"Expected a dictionary, got {type(conversation).__name__}"
+            )
+        if "messages" in conversation:
+            return cls(messages=conversation["messages"])
+        elif "instruction" in conversation:
+            instruction_sample = InstructionSample.from_json(json_str)
+            return cls.from_instruction_sample(instruction_sample=instruction_sample)
+        else:
+            raise ValueError(
+                "JSON string does not contain 'messages' or 'instruction' key."
+            )
 
     @classmethod
     def from_instruction_sample(
@@ -79,6 +92,17 @@ class Conversation:
         )
         conversation.add_message(role="assistant", content=instruction_sample.output)
         return conversation
+
+    def __str__(self) -> str:
+        """Return a string representation of the conversation.
+
+        Returns:
+            A string representation of the conversation.
+        """
+        return "\n".join(
+            f"{message['role'].upper()}: {message['content']}"
+            for message in self.messages
+        )
 
 
 @dataclass
