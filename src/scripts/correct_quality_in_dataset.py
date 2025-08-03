@@ -71,7 +71,7 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
         format="%(asctime)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    logger = logging.getLogger("correct_dataset")
+    logger = logging.getLogger("correct_quality_in_dataset")
 
     logging.getLogger("httpx").setLevel(logging.CRITICAL)
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
