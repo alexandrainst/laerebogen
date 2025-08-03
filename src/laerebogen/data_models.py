@@ -2,6 +2,83 @@
 
 import json
 from dataclasses import dataclass, field
+from typing import Literal
+
+
+@dataclass
+class Conversation:
+    """A conversation between a user and an LLM, used for instruction tuning.
+
+    Attributes:
+        messages:
+            A list of messages in the conversation, where each message is a dictionary
+            with keys "role" and "content".
+    """
+
+    messages: list[dict[Literal["role", "content"], str]] = field(default_factory=list)
+
+    def add_message(self, role: str, content: str) -> None:
+        """Add a message to the conversation.
+
+        Args:
+            role:
+                The role of the message sender (e.g., "user", "assistant").
+            content:
+                The content of the message.
+        """
+        self.messages.append({"role": role, "content": content})
+
+    def to_json(self) -> str:
+        """Convert the conversation to a JSON string.
+
+        Returns:
+            A JSON string representation of the conversation.
+        """
+        return json.dumps(self.messages, ensure_ascii=False)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "Conversation":
+        """Create a conversation from a JSON string.
+
+        Args:
+            json_str:
+                A JSON string representation of the conversation.
+
+        Returns:
+            An instance of Conversation.
+
+        Raises:
+            ValueError:
+                If the JSON string is invalid.
+        """
+        try:
+            messages = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON string: {json_str!r}") from e
+        return cls(messages=messages)
+
+    @classmethod
+    def from_instruction_sample(
+        cls, instruction_sample: "InstructionSample"
+    ) -> "Conversation":
+        """Create a conversation from an instruction sample.
+
+        Args:
+            instruction_sample:
+                An instance of InstructionSample.
+
+        Returns:
+            An instance of Conversation with the instruction and output as messages.
+        """
+        conversation = cls()
+        conversation.add_message(
+            role="user",
+            content=f"{instruction_sample.instruction}\n\n{instruction_sample.input}"
+            if instruction_sample.input
+            else instruction_sample.instruction,
+        )
+        conversation.add_message(role="assistant", content=instruction_sample.output)
+        return conversation
 
 
 @dataclass
