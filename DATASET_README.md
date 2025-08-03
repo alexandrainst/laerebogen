@@ -109,10 +109,11 @@ dataset as well as models trained on it must also be shared under the same licen
 
 ## Creators and Funders
 
-This dataset was created by [Dan Saattrup Smart](https://huggingface.co/saattrupdan)
-from the [Alexandra Institute](https://alexandra.dk) as part of the [Danish Foundation
-Models project](https://www.foundationmodels.dk). The project is funded by the Danish
-Research Reserve as part of the national budget of Denmark for 2025, and consists of the
+This dataset was created by [Sofie Helene Bruun](https://hf.co/sofiehb) and [Dan
+Saattrup Smart](https://huggingface.co/saattrupdan) from the [Alexandra
+Institute](https://alexandra.dk) as part of the [Danish Foundation Models
+project](https://www.foundationmodels.dk). The project is funded by the Danish Research
+Reserve as part of the national budget of Denmark for 2025, and consists of the
 following partners:
 
 - [Alexandra Institute](https://alexandra.dk)
