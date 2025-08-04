@@ -32,7 +32,7 @@ def add_follow_up_to_conversations(
         The conversations with added follow-up queries.
     """
     # Load the model and tokenizer
-    logger.info(f"Loading model {model_id!r} for correcting grammar in instructions...")
+    logger.info(f"Loading model {model_id!r} for adding follow-ups to conversations...")
     model = load_vllm_model(model_id=model_id)
     tokenizer = model.get_tokenizer()
 
