@@ -1,4 +1,4 @@
-"""Finetune a pre-trained generative language model on a dataset."""
+"""Finetune a pre-trained generative language model on the generated dataset."""
 
 import importlib.util
 import logging

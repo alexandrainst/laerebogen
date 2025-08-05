@@ -20,6 +20,14 @@ To then generate the dataset, you can run:
 make dataset
 ```
 
+To finetune a model on the dataset, you can run:
+
+```bash
+uv run src/scripts/finetune_model.py \
+	--base-model HUGGINGFACE_MODEL_ID \
+	--new-model HUGGINGFACE_MODEL_ID
+```
+
 
 ## Dataset Structure
 
