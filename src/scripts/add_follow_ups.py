@@ -20,6 +20,7 @@ from tqdm.auto import tqdm
 
 from laerebogen.data_models import Conversation
 from laerebogen.following_up import add_follow_up_to_conversations
+from laerebogen.vllm_utils import load_vllm_model
 
 
 @click.command()
@@ -107,6 +108,10 @@ def main(
             Conversation.from_json(line.strip()) for line in f if line.strip()
         ]
 
+    # Load the model
+    logger.info(f"Loading model {model!r} for evolving instructions...")
+    vllm_model = load_vllm_model(model_id=model)
+
     # Add follow-ups to each conversation
     pbar = (
         tqdm(
@@ -119,7 +124,7 @@ def main(
     )
     for _ in pbar:
         conversations = add_follow_up_to_conversations(
-            conversations=conversations, prompt_path=prompt_path, model_id=model
+            conversations=conversations, prompt_path=prompt_path, model=vllm_model
         )
 
     # Store the extended conversations

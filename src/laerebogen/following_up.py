@@ -2,6 +2,7 @@
 
 import json
 import logging
+import typing as t
 from copy import deepcopy
 from pathlib import Path
 
@@ -9,13 +10,16 @@ from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm
 
 from .data_models import Conversation
-from .vllm_utils import generate_text_with_vllm, load_vllm_model
+from .vllm_utils import generate_text_with_vllm
+
+if t.TYPE_CHECKING:
+    from vllm import LLM
 
 logger = logging.getLogger(__name__)
 
 
 def add_follow_up_to_conversations(
-    conversations: list[Conversation], prompt_path: str, model_id: str
+    conversations: list[Conversation], prompt_path: str, model: "LLM"
 ) -> list[Conversation]:
     """Add follow-up queries to conversations using an instruction-tuned LLM.
 
@@ -24,16 +28,14 @@ def add_follow_up_to_conversations(
             The conversations to which follow-up queries will be added.
         prompt_path:
             Path to the prompt file containing the correction prompt.
-        model_id:
-            The model ID of the instruction-tuned large language model to use for
-            correction.
+        model:
+            The instruction-tuned large language model to use for generating follow-up
+            queries.
 
     Returns:
         The conversations with added follow-up queries.
     """
-    # Load the model and tokenizer
-    logger.info(f"Loading model {model_id!r} for adding follow-ups to conversations...")
-    model = load_vllm_model(model_id=model_id)
+    # Load the tokenizer
     tokenizer = model.get_tokenizer()
 
     # Load the prompt
