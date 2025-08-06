@@ -27,7 +27,7 @@ def add_follow_up_to_conversations(
         conversations:
             The conversations to which follow-up queries will be added.
         prompt_path:
-            Path to the prompt file containing the correction prompt.
+            Path to the prompt file containing the follow-up prompt.
         model:
             The instruction-tuned large language model to use for generating follow-up
             queries.
@@ -45,8 +45,7 @@ def add_follow_up_to_conversations(
     # Copy the conversations to avoid modifying the original ones
     extended_conversations = deepcopy(conversations)
 
-    # Correct the instructions
-    logger.info("Adding follow-up queries to conversations...")
+    # Add follow-ups to the instructions
     prompts = [
         follow_up_prompt.format(conversation=str(conversation))
         for conversation in conversations
