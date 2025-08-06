@@ -109,7 +109,7 @@ def main(
         ]
 
     # Load the model
-    logger.info(f"Loading model {model!r} for evolving instructions...")
+    logger.info(f"Loading model {model!r} for adding follow-ups to instructions...")
     vllm_model = load_vllm_model(model_id=model)
 
     # Add follow-ups to each conversation
