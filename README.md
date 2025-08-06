@@ -1,9 +1,6 @@
 # Lærebogen
 
-An instruction-following dataset for Danish.
-
-This dataset features XXX examples of multi-turn conversations in Danish, designed to
-train instruction-following models, with a commercially usable license.
+An instruction-following dataset generation recipe for Danish.
 
 
 ## Quick Start

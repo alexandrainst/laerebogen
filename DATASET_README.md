@@ -12,8 +12,8 @@ size_categories:
 
 An instruction-following dataset for Danish.
 
-This dataset features XXX examples of multi-turn conversations in Danish, designed to
-train instruction-following models, with a commercially usable license.
+This dataset features 216,253 examples of multi-turn conversations in Danish, designed
+to train instruction-following models, with a commercially usable license.
 
 
 ## Dataset Structure
