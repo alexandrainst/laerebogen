@@ -34,7 +34,7 @@ class Conversation:
         Returns:
             A JSON string representation of the conversation.
         """
-        return json.dumps(self, ensure_ascii=False)
+        return json.dumps(dict(messages=self.messages), ensure_ascii=False)
 
     @classmethod
     def from_json(cls, json_str: str) -> "Conversation":
