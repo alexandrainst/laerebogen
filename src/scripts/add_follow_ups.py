@@ -5,7 +5,7 @@ Usage:
         [--dataset-path <dataset_path>] \
         [--prompt-path <prompt_path>] \
         [--model <model>] \
-        [--num-evolutions <num_evolutions>] \
+        [--num-follow-ups <num_follow_ups>] \
         [--verbose]
 """
 
