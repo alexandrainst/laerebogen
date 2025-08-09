@@ -271,12 +271,15 @@ def finetune_model(
         Returns:
             A list of formatted examples, ready for training.
         """
-        breakpoint()
-        return tokenizer.apply_chat_template(
+        formatted_texts = tokenizer.apply_chat_template(
             conversation=examples["messages"],
             add_generation_prompt=True,
             tokenize=False,
         )
+        if isinstance(formatted_texts, str):
+            formatted_texts = [formatted_texts]
+        assert isinstance(formatted_texts, list)
+        return formatted_texts
 
     logger.info("Creating the SFT trainer...")
     trainer = SFTTrainer(
