@@ -13,7 +13,7 @@ import torch
 import wandb
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import PreTrainedModel, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
@@ -190,8 +190,9 @@ def finetune_model(
         load_in_4bit=load_in_4bit,
         token=os.getenv("HUGGINGFACE_API_KEY", True),
     )
-    assert isinstance(tokenizer, PreTrainedTokenizer), (
-        f"Expected tokenizer to be a PreTrainedTokenizer, but got {type(tokenizer)}."
+    assert isinstance(tokenizer, (PreTrainedTokenizer, PreTrainedTokenizerFast)), (
+        "Expected tokenizer to be a PreTrainedTokenizer or PreTrainedTokenizerFast, "
+        f"but got {type(tokenizer)}."
     )
     assert tokenizer.model_max_length == max_seq_length, (
         f"Tokenizer's model_max_length ({tokenizer.model_max_length:,}) does not match "
