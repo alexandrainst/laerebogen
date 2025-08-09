@@ -261,18 +261,20 @@ def finetune_model(
         assistant_only_loss=True,
     )
 
-    def formatting_func(example: dict) -> str:
+    def formatting_func(examples: dict) -> list[str]:
         """Format the example for training.
 
         Args:
-            example:
-                A single example from the dataset.
+            examples:
+                A batch of examples from the dataset.
 
         Returns:
-            A string containing the formatted example.
+            A list of formatted examples, ready for training.
         """
         return tokenizer.apply_chat_template(
-            conversation=example["messages"], add_generation_prompt=True, tokenize=False
+            conversation=examples["messages"],
+            add_generation_prompt=True,
+            tokenize=False,
         )
 
     logger.info("Creating the SFT trainer...")
