@@ -190,7 +190,9 @@ def finetune_model(
         load_in_4bit=load_in_4bit,
         token=os.getenv("HUGGINGFACE_API_KEY", True),
     )
-    assert isinstance(tokenizer, PreTrainedTokenizer)
+    assert isinstance(tokenizer, PreTrainedTokenizer), (
+        f"Expected tokenizer to be a PreTrainedTokenizer, but got {type(tokenizer)}."
+    )
     assert tokenizer.model_max_length == max_seq_length, (
         f"Tokenizer's model_max_length ({tokenizer.model_max_length:,}) does not match "
         f"the specified max_seq_length ({max_seq_length:,})."
