@@ -194,9 +194,10 @@ def finetune_model(
         "Expected tokenizer to be a PreTrainedTokenizer or PreTrainedTokenizerFast, "
         f"but got {type(tokenizer)}."
     )
-    assert tokenizer.model_max_length == max_seq_length, (
-        f"Tokenizer's model_max_length ({tokenizer.model_max_length:,}) does not match "
-        f"the specified max_seq_length ({max_seq_length:,})."
+    assert tokenizer.model_max_length >= max_seq_length, (
+        f"Tokenizer's model_max_length ({tokenizer.model_max_length:,}) must be "
+        f"greater than or equal to the given max_seq_length ({max_seq_length:,}). "
+        "Please reduce the --max-seq-length parameter."
     )
     model, tokenizer = setup_chat_format(
         model=model, tokenizer=tokenizer, format="chatml"
