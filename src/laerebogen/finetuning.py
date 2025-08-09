@@ -230,7 +230,7 @@ def finetune_model(
 
     num_devices = torch.cuda.device_count()
     gradient_accumulation_steps = (
-        total_batch_size // per_device_batch_size // num_devices
+        (total_batch_size // per_device_batch_size // num_devices) if not testing else 1
     )
 
     sft_config = SFTConfig(
