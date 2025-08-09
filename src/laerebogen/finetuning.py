@@ -271,6 +271,7 @@ def finetune_model(
         Returns:
             A list of formatted examples, ready for training.
         """
+        breakpoint()
         return tokenizer.apply_chat_template(
             conversation=examples["messages"],
             add_generation_prompt=True,
