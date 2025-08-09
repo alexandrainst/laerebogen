@@ -6,6 +6,9 @@ import os
 import typing as t
 import warnings
 
+if importlib.util.find_spec("unsloth") is not None or t.TYPE_CHECKING:
+    from unsloth import FastLanguageModel
+
 import torch
 import wandb
 from datasets import Dataset, load_dataset
@@ -15,9 +18,6 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
 from trl import SFTConfig, SFTTrainer, setup_chat_format
-
-if importlib.util.find_spec("unsloth") is not None or t.TYPE_CHECKING:
-    from unsloth import FastLanguageModel
 
 logger = logging.getLogger(__package__)
 
