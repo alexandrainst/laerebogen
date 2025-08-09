@@ -10,7 +10,7 @@ import torch
 import wandb
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
-from transformers.models import PreTrainedModel
+from transformers import PreTrainedModel
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
