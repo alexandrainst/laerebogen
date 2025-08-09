@@ -5,7 +5,7 @@ Usage:
         --base-model <base_model> \
         --new-model <new_model> \
         [--val-samples <val_samples>] \
-        [--load-in-4-bit] \
+        [--load-in-4bit] \
         [--max-seq-length <max_seq_length>] \
         [--lora-rank <lora_rank>] \
         [--learning-rate <learning_rate>] \
@@ -55,7 +55,7 @@ logger = logging.getLogger("finetune_model")
     help="Number of validation samples to use.",
 )
 @click.option(
-    "--load-in-4-bit",
+    "--load-in-4bit",
     is_flag=True,
     default=False,
     help="Load the model in 4-bit precision.",
