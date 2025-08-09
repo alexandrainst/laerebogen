@@ -337,7 +337,7 @@ def finetune_model(
     )
     assert isinstance(input_ids, torch.Tensor)
     input_ids = input_ids.to("cuda")
-    outputs = peft_model.generate(input_ids=input_ids, max_new_tokens=256)
+    outputs = peft_model.generate(input_ids=input_ids, max_new_tokens=1024)
     response = tokenizer.decode(outputs[0, input_ids.size(1) :])
     logger.info("*** Sample response ***")
     logger.info(f"Input: {doc!r}")
