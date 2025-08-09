@@ -290,7 +290,7 @@ def finetune_model(
     if use_wandb and not testing:
         wandb.login(key=os.environ["WANDB_API_KEY"])
         wandb.init(
-            project="ugens-elev",
+            project="laerebogen-finetuning",
             config=dict(
                 base_model_id=base_model_id,
                 new_model_id=new_model_id,
