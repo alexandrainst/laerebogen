@@ -133,3 +133,10 @@ dmypy.json
 
 # Datasets
 data/dataset*.jsonl
+data/test_dataset*.jsonl
+
+# Training outputs
+outputs/
+wandb/
+unsloth_compiled_cache/
+_unsloth_temporary_saved_buffers/
