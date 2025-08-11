@@ -56,7 +56,7 @@ def finetune_model(
             organisation prefix, e.g., "gemma-2-9b" instead of "unsloth/gemma-2-9b".
         new_model_id:
             The model ID of the finetuned model. The model will be uploaded to the
-            Hugging Face Hub with the ID `alexandrainst/{new_model_id}`.
+            Hugging Face Hub with this ID.
         val_samples:
             The number of samples to use for the validation set. The rest of the
             samples will be used for the training set.
@@ -211,7 +211,7 @@ def finetune_model(
             f"Pushing the tokenizer to the Hugging Face Hub with ID {new_model_id}..."
         )
         tokenizer.push_to_hub(
-            repo_id=f"alexandrainst/{new_model_id}",
+            repo_id=new_model_id,
             token=os.getenv("HUGGINGFACE_API_KEY", True),
             private=True,
         )
@@ -348,7 +348,7 @@ def finetune_model(
             f"Pushing the model to the Hugging Face Hub with ID {new_model_id}..."
         )
         peft_model.push_to_hub_merged(
-            repo_id=f"alexandrainst/{new_model_id}",
+            repo_id=new_model_id,
             tokenizer=tokenizer,
             save_method="merged_16bit",
             token=os.getenv("HUGGINGFACE_API_KEY", True),

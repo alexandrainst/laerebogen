@@ -3,7 +3,7 @@
 Usage:
     python finetune_model.py \
         --base-model <base_model> \
-        --new-model <new_model> \
+        [--new-model <new_model>] \
         [--val-samples <val_samples>] \
         [--load-in-4bit] \
         [--max-seq-length <max_seq_length>] \
@@ -44,8 +44,10 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--new-model",
     type=str,
-    required=True,
-    help="The new model ID to save the finetuned model as.",
+    default=None,
+    show_default=True,
+    help="The new model ID to save the finetuned model as. If not provided, it will "
+    "be `alexandrainst/<base_model>-laerebogen`.",
 )
 @click.option(
     "--val-samples",
@@ -63,7 +65,7 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--max-seq-length",
     type=int,
-    default=8192,
+    default=4096,
     show_default=True,
     help="Maximum sequence length for the model.",
 )
@@ -112,7 +114,7 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--num-epochs",
     type=int,
-    default=1,
+    default=3,
     show_default=True,
     help="Number of epochs to train for.",
 )
@@ -126,14 +128,14 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--logging-steps",
     type=int,
-    default=1,
+    default=10,
     show_default=True,
     help="Number of steps between logging.",
 )
 @click.option(
     "--eval-steps",
     type=int,
-    default=20,
+    default=100,
     show_default=True,
     help="Number of steps between evaluations.",
 )
@@ -155,7 +157,7 @@ logger = logging.getLogger("finetune_model")
 )
 def main(
     base_model: str,
-    new_model: str,
+    new_model: str | None,
     val_samples: int,
     load_in_4bit: bool,
     max_seq_length: int,
@@ -179,7 +181,8 @@ def main(
         base_model:
             The base model ID to finetune.
         new_model:
-            The new model ID to save the finetuned model as.
+            The new model ID to save the finetuned model as. If not provided, it will
+            be `alexandrainst/<base_model>-laerebogen`.
         val_samples:
             Number of validation samples to use.
         load_in_4bit:
@@ -213,6 +216,10 @@ def main(
         testing:
             Run in testing mode with a small dataset.
     """
+    if new_model is None:
+        base_model_without_organisation = base_model.split("/")[1]
+        new_model = f"alexandrainst/{base_model_without_organisation}-laerebogen"
+
     finetune_model(
         base_model_id=base_model,
         new_model_id=new_model,
