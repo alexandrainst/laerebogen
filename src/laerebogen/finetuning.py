@@ -10,14 +10,16 @@ if importlib.util.find_spec("unsloth") is not None or t.TYPE_CHECKING:
     from unsloth import FastLanguageModel
 
 import torch
-import wandb
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
+from peft import PeftModelForCausalLM
 from transformers import PreTrainedModel, PreTrainedTokenizer, PreTrainedTokenizerFast
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
-from trl import SFTConfig, SFTTrainer, setup_chat_format
+from trl import SFTConfig, SFTTrainer
+
+import wandb
 
 logger = logging.getLogger(__package__)
 
@@ -199,48 +201,47 @@ def finetune_model(
         f"greater than or equal to the given max_seq_length ({max_seq_length:,}). "
         "Please reduce the --max-seq-length parameter."
     )
-    model, tokenizer = setup_chat_format(
-        model=model, tokenizer=tokenizer, format="chatml"
+
+    # Set up the jinja2 chat format for the tokenizer and model
+    bos_token = tokenizer.bos_token
+    assert bos_token is not None, (
+        "Tokenizer does not have a BOS token set. Please set the BOS token in the "
+        "tokenizer configuration."
     )
-    tokenizer.padding_side = "left"
+    eos_token = tokenizer.eos_token
+    assert eos_token is not None, (
+        "Tokenizer does not have an EOS token set. Please set the EOS token in the "
+        "tokenizer configuration."
+    )
+    chat_template = (
+        "{% for m in messages %}"
+        f"{{{{ '{bos_token}' + m['role'] + '\n' + m['content'] + '{eos_token}\n' }}}}"
+        "{% endfor %}"
+        "{% if add_generation_prompt %}"
+        f"{{{{ '{bos_token}assistant\n' }}}}"
+        "{% endif %}"
+    )
+    tokenizer.chat_template = chat_template
     assert isinstance(model, PreTrainedModel)
     assert isinstance(tokenizer, PreTrainedTokenizerBase)
-    breakpoint()
-
-    logger.info(
-        f"Pushing the tokenizer to the Hugging Face Hub with ID {new_model_id}..."
-    )
-    tokenizer.push_to_hub(
-        repo_id=new_model_id, token=os.getenv("HUGGINGFACE_API_KEY", True), private=True
-    )
 
     logger.info("Converting the model to a PEFT model...")
-    peft_model = FastLanguageModel.get_peft_model(
+    peft_model: PeftModelForCausalLM = FastLanguageModel.get_peft_model(
         model=model,
         r=lora_rank,
-        target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
-            "gate_proj",
-            "up_proj",
-            "down_proj",
-        ],
         lora_alpha=lora_rank * 2,
         lora_dropout=0,
         bias="none",
         use_rslora=True,
-        use_gradient_checkpointing=True,
+        use_gradient_checkpointing="unsloth",
         random_state=4242,
     )
-    breakpoint()
 
+    # Set up the training configuration
     num_devices = torch.cuda.device_count()
     gradient_accumulation_steps = (
         (total_batch_size // per_device_batch_size // num_devices) if not testing else 1
     )
-
     sft_config = SFTConfig(
         output_dir="outputs",
         run_name=new_model_id,
@@ -301,11 +302,10 @@ def finetune_model(
         args=sft_config,
         formatting_func=formatting_func,
     )
-    breakpoint()
 
     if use_wandb and not testing:
-        wandb.login(key=os.environ["WANDB_API_KEY"])
-        wandb.init(
+        wandb.login(key=os.environ["WANDB_API_KEY"])  # type: ignore[attr-defined]
+        wandb.init(  # type: ignore[attr-defined]
             project="laerebogen-finetuning",
             config=dict(
                 base_model_id=base_model_id,
@@ -325,8 +325,6 @@ def finetune_model(
         warnings.simplefilter(action="ignore", category=UserWarning)
         trainer.train()
 
-    breakpoint()
-
     logger.info("Finetuning complete. Generating a sample response...")
     peft_model = FastLanguageModel.for_inference(peft_model)
     if testing:
@@ -341,7 +339,12 @@ def finetune_model(
     )
     assert isinstance(input_ids, torch.Tensor)
     input_ids = input_ids.to("cuda")
-    outputs = peft_model.generate(input_ids=input_ids, max_new_tokens=1024)
+    assert isinstance(input_ids, torch.Tensor)
+    outputs = peft_model.generate(
+        input_ids=input_ids,
+        attention_mask=torch.ones_like(input_ids),
+        max_new_tokens=1024,
+    )
     response = tokenizer.decode(outputs[0, input_ids.size(1) :])
     logger.info("*** Sample response ***")
     logger.info(f"Input: {doc!r}")
@@ -357,4 +360,4 @@ def finetune_model(
     )
 
     if use_wandb:
-        wandb.finish()
+        wandb.finish()  # type: ignore[attr-defined]
