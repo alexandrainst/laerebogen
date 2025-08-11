@@ -269,6 +269,8 @@ def finetune_model(
         neftune_noise_alpha=neftune_noise_alpha,
         assistant_only_loss=True,
         ddp_find_unused_parameters=False,
+        load_best_model_at_end=True,
+        save_only_model=False,
     )
 
     def formatting_func(examples: dict) -> list[str]:
