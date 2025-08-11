@@ -205,6 +205,7 @@ def finetune_model(
     tokenizer.padding_side = "left"
     assert isinstance(model, PreTrainedModel)
     assert isinstance(tokenizer, PreTrainedTokenizerBase)
+    breakpoint()
 
     logger.info(
         f"Pushing the tokenizer to the Hugging Face Hub with ID {new_model_id}..."
