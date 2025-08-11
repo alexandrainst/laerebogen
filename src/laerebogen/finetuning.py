@@ -233,6 +233,7 @@ def finetune_model(
         use_gradient_checkpointing=True,
         random_state=4242,
     )
+    breakpoint()
 
     num_devices = torch.cuda.device_count()
     gradient_accumulation_steps = (
@@ -299,6 +300,7 @@ def finetune_model(
         args=sft_config,
         formatting_func=formatting_func,
     )
+    breakpoint()
 
     if use_wandb and not testing:
         wandb.login(key=os.environ["WANDB_API_KEY"])
@@ -321,6 +323,8 @@ def finetune_model(
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=UserWarning)
         trainer.train()
+
+    breakpoint()
 
     logger.info("Finetuning complete. Generating a sample response...")
     peft_model = FastLanguageModel.for_inference(peft_model)
