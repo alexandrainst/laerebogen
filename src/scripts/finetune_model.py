@@ -23,6 +23,7 @@ Usage:
 """
 
 import logging
+import re
 import typing as t
 
 import click
@@ -219,6 +220,8 @@ def main(
     if new_model is None:
         base_model_without_organisation = base_model.split("/")[1]
         new_model = f"alexandrainst/{base_model_without_organisation}-laerebogen"
+    if testing:
+        new_model = re.sub(r"-test$", "", new_model) + "-test"
 
     finetune_model(
         base_model_id=base_model,

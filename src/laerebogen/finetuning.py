@@ -206,15 +206,12 @@ def finetune_model(
     assert isinstance(model, PreTrainedModel)
     assert isinstance(tokenizer, PreTrainedTokenizerBase)
 
-    if not testing:
-        logger.info(
-            f"Pushing the tokenizer to the Hugging Face Hub with ID {new_model_id}..."
-        )
-        tokenizer.push_to_hub(
-            repo_id=new_model_id,
-            token=os.getenv("HUGGINGFACE_API_KEY", True),
-            private=True,
-        )
+    logger.info(
+        f"Pushing the tokenizer to the Hugging Face Hub with ID {new_model_id}..."
+    )
+    tokenizer.push_to_hub(
+        repo_id=new_model_id, token=os.getenv("HUGGINGFACE_API_KEY", True), private=True
+    )
 
     logger.info("Converting the model to a PEFT model...")
     peft_model = FastLanguageModel.get_peft_model(
@@ -345,17 +342,14 @@ def finetune_model(
     logger.info(f"Input: {doc!r}")
     logger.info(f"Response: {response!r}")
 
-    if not testing:
-        logger.info(
-            f"Pushing the model to the Hugging Face Hub with ID {new_model_id}..."
-        )
-        peft_model.push_to_hub_merged(
-            repo_id=new_model_id,
-            tokenizer=tokenizer,
-            save_method="merged_16bit",
-            token=os.getenv("HUGGINGFACE_API_KEY", True),
-            private=True,
-        )
+    logger.info(f"Pushing the model to the Hugging Face Hub with ID {new_model_id}...")
+    peft_model.push_to_hub_merged(
+        repo_id=new_model_id,
+        tokenizer=tokenizer,
+        save_method="merged_16bit",
+        token=os.getenv("HUGGINGFACE_API_KEY", True),
+        private=True,
+    )
 
     if use_wandb:
         wandb.finish()
