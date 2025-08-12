@@ -115,7 +115,7 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--num-epochs",
     type=int,
-    default=3,
+    default=1,
     show_default=True,
     help="Number of epochs to train for.",
 )
