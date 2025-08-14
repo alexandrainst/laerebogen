@@ -64,7 +64,10 @@ def main(dataset: list[str], new_dataset: str, public: bool) -> None:
     # Load datasets
     logger.info("Loading datasets...")
     datasets: list[Dataset] = [
-        load_dataset(dataset_name, split="train" if ":" not in ds else ds.split(":")[1])
+        load_dataset(
+            dataset_name,
+            split="train" if ":" not in dataset_name else dataset_name.split(":")[1],
+        )
         for dataset_name in dataset_names
     ]
 
