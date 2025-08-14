@@ -26,7 +26,7 @@ logger = logging.getLogger("push_to_hub")
 @click.option(
     "--repo_id",
     type=str,
-    default="alexandrainst/laerebogen",
+    default="danish-foundation-models/laerebogen",
     show_default=True,
     help="The repository ID on the Hugging Face Hub where the dataset will be pushed.",
 )

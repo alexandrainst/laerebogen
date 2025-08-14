@@ -49,12 +49,12 @@ logger = logging.getLogger("finetune_model")
     default=None,
     show_default=True,
     help="The new model ID to save the finetuned model as. If not provided, it will "
-    "be `alexandrainst/<base_model>-laerebogen`.",
+    "be `danish-foundation-models/<base_model>-laerebogen`.",
 )
 @click.option(
     "--dataset",
     type=str,
-    default="alexandrainst/laerebogen",
+    default="danish-foundation-models/laerebogen",
     show_default=True,
     help="The dataset to finetune the model on. This must be the ID of a dataset on "
     "the Hugging Face Hub, and must contain a `messages` feature containing lists of "
@@ -192,7 +192,7 @@ def main(
         base_model_without_organisation = base_model.split("/")[1].replace("_", "-")
         dataset_without_organisation = dataset.split("/")[1].replace("_", "-")
         new_model = (
-            "alexandrainst/"
+            "danish-foundation-models/"
             f"{base_model_without_organisation}-{dataset_without_organisation}"
         )
     if testing:

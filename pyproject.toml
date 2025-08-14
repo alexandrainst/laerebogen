@@ -4,8 +4,8 @@ version = "0.0.0"
 description = "Generation of a Danish instruction dataset."
 readme = "README.md"
 authors = [
-    {name = "Sofie Helene Bruun", email = "sofie.bruun@alexandra.dk"},
     {name = "Dan Saattrup Smart", email = "dan.smart@alexandra.dk"},
+    {name = "Sofie Helene Bruun", email = "sofie.bruun@alexandra.dk"},
 ]
 requires-python = ">=3.11,<4.0"
 dependencies = [
