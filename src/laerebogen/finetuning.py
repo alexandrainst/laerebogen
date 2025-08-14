@@ -10,6 +10,7 @@ if importlib.util.find_spec("unsloth") is not None or t.TYPE_CHECKING:
     from unsloth import FastLanguageModel
 
 import torch
+import wandb
 from datasets import Dataset, load_dataset
 from dotenv import load_dotenv
 from peft import PeftModelForCausalLM
@@ -18,8 +19,6 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
 from trl import SFTConfig, SFTTrainer
-
-import wandb
 
 logger = logging.getLogger(__package__)
 
@@ -32,6 +31,7 @@ os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
 def finetune_model(
     base_model_id: str,
     new_model_id: str,
+    dataset_id: str,
     val_samples: int,
     load_in_4bit: bool,
     max_seq_length: int,
@@ -59,6 +59,10 @@ def finetune_model(
         new_model_id:
             The model ID of the finetuned model. The model will be uploaded to the
             Hugging Face Hub with this ID.
+        dataset_id:
+            The dataset to finetune the model on. This must be the ID of a dataset on
+            the Hugging Face Hub, and must contain a `messages` feature containing lists
+            of dictionaries, representing conversations.
         val_samples:
             The number of samples to use for the validation set. The rest of the
             samples will be used for the training set.
@@ -156,7 +160,7 @@ def finetune_model(
 
     logger.info("Loading the dataset...")
     dataset = load_dataset(
-        path="alexandrainst/laerebogen",
+        path=dataset_id,
         split="train",
         token=os.getenv("HUGGINGFACE_API_KEY", True),
     )
@@ -292,7 +296,7 @@ def finetune_model(
         if isinstance(formatted_texts, str):
             formatted_texts = [formatted_texts]
         assert isinstance(formatted_texts, list)
-        return formatted_texts
+        return formatted_texts  # type: ignore[return-value]
 
     logger.info("Creating the SFT trainer...")
     trainer = SFTTrainer(

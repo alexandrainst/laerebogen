@@ -77,26 +77,7 @@ def main(
     num_evolutions: int,
     verbose: bool,
 ) -> None:
-    """Evolve the instruction-following dataset.
-
-    Args:
-        dataset_path:
-            Path to the dataset file.
-        rewriter_prompt_path:
-            Path to the prompt file for rewriting instructions.
-        creator_prompt_path:
-            Path to the prompt file for creating new instructions.
-        model:
-            Model ID of the instruction-tuned large language model to use for evolution.
-        num_evolutions:
-            Number of times to evolve the dataset.
-        verbose:
-            Enable verbose logging.
-
-    Raises:
-        FileNotFoundError:
-            If the dataset file does not exist.
-    """
+    """Evolve the instruction-following dataset."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",

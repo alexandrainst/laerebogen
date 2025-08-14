@@ -1,7 +1,7 @@
 """Push the dataset to the Hugging Face Hub.
 
 Usage:
-    python push_to_hub.py [--data-path <data_path>] [--repo_id <repo_id>] [--private]
+    python push_to_hub.py [--data-path <data_path>] [--repo_id <repo_id>] [--public]
 """
 
 import logging
@@ -37,16 +37,7 @@ logger = logging.getLogger("push_to_hub")
     help="Whether to create a public repository on the Hugging Face Hub.",
 )
 def main(data_path: str, repo_id: str, public: bool) -> None:
-    """Push the dataset to the Hugging Face Hub.
-
-    Args:
-        data_path:
-            Path to the dataset stored as a JSONL file.
-        repo_id:
-            The repository ID on the Hugging Face Hub where the dataset will be pushed.
-        public:
-            Whether to create a public repository on the Hugging Face Hub.
-    """
+    """Push the dataset to the Hugging Face Hub."""
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path, split="train")
     assert isinstance(dataset, Dataset)

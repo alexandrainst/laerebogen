@@ -67,25 +67,7 @@ def main(
     num_follow_ups: int,
     verbose: bool,
 ) -> None:
-    """Add follow-up questions to a dataset of conversations.
-
-    Args:
-        dataset_path:
-            Path to the dataset file.
-        prompt_path:
-            Path to the grammar correction prompt file.
-        model:
-            Model ID of the instruction-tuned large language model used to create the
-            follow-up queries and answers.
-        num_follow_ups:
-            Number of follow-up questions to generate for each conversation.
-        verbose:
-            Enable verbose logging.
-
-    Raises:
-        FileNotFoundError:
-            If the dataset file does not exist.
-    """
+    """Add follow-up questions to a dataset of conversations."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",

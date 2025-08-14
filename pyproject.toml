@@ -23,6 +23,7 @@ dependencies = [
     "transformers>=4.54.0",
     "trl>=0.20.0",
     "wandb>=0.21.0",
+    "peft>=0.17.0",
     "vllm>=0.9.1; platform_system == 'Linux'",
     "unsloth>=2025.8.1; platform_system == 'Linux'",
 ]

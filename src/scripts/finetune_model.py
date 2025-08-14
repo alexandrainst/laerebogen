@@ -4,6 +4,7 @@ Usage:
     python finetune_model.py \
         --base-model <base_model> \
         [--new-model <new_model>] \
+        [--dataset <dataset>] \
         [--val-samples <val_samples>] \
         [--load-in-4bit] \
         [--max-seq-length <max_seq_length>] \
@@ -49,6 +50,15 @@ logger = logging.getLogger("finetune_model")
     show_default=True,
     help="The new model ID to save the finetuned model as. If not provided, it will "
     "be `alexandrainst/<base_model>-laerebogen`.",
+)
+@click.option(
+    "--dataset",
+    type=str,
+    default="alexandrainst/laerebogen",
+    show_default=True,
+    help="The dataset to finetune the model on. This must be the ID of a dataset on "
+    "the Hugging Face Hub, and must contain a `messages` feature containing lists of "
+    "dictionaries, representing conversations.",
 )
 @click.option(
     "--val-samples",
@@ -159,6 +169,7 @@ logger = logging.getLogger("finetune_model")
 def main(
     base_model: str,
     new_model: str | None,
+    dataset: str,
     val_samples: int,
     load_in_4bit: bool,
     max_seq_length: int,
@@ -176,56 +187,21 @@ def main(
     use_wandb: bool,
     testing: bool,
 ) -> None:
-    """Finetune a model on an instruction following dataset.
-
-    Args:
-        base_model:
-            The base model ID to finetune.
-        new_model:
-            The new model ID to save the finetuned model as. If not provided, it will
-            be `alexandrainst/<base_model>-laerebogen`.
-        val_samples:
-            Number of validation samples to use.
-        load_in_4bit:
-            Load the model in 4-bit precision.
-        max_seq_length:
-            Maximum sequence length for the model.
-        lora_rank:
-            Rank for LoRA finetuning.
-        learning_rate:
-            Learning rate for the optimiser.
-        weight_decay:
-            Weight decay for the optimiser.
-        neftune_noise_alpha:
-            Noise alpha for Neftune.
-        per_device_batch_size:
-            Batch size per device.
-        total_batch_size:
-            Total batch size for training.
-        num_epochs:
-            Number of epochs to train for.
-        warmup_ratio:
-            Warmup ratio for the learning rate scheduler.
-        logging_steps:
-            Number of steps between logging.
-        eval_steps:
-            Number of steps between evaluations.
-        dataloader_num_workers:
-            Number of workers for the dataloader.
-        use_wandb:
-            Use Weights & Biases for logging.
-        testing:
-            Run in testing mode with a small dataset.
-    """
+    """Finetune a model on an instruction following dataset."""
     if new_model is None:
-        base_model_without_organisation = base_model.split("/")[1]
-        new_model = f"alexandrainst/{base_model_without_organisation}-laerebogen"
+        base_model_without_organisation = base_model.split("/")[1].replace("_", "-")
+        dataset_without_organisation = dataset.split("/")[1].replace("_", "-")
+        new_model = (
+            "alexandrainst/"
+            f"{base_model_without_organisation}-{dataset_without_organisation}"
+        )
     if testing:
         new_model = re.sub(r"-test$", "", new_model) + "-test"
 
     finetune_model(
         base_model_id=base_model,
         new_model_id=new_model,
+        dataset_id=dataset,
         val_samples=val_samples,
         load_in_4bit=load_in_4bit,
         max_seq_length=max_seq_length,

@@ -94,29 +94,7 @@ def main(
     num_cpus: int,
     verbose: bool,
 ) -> None:
-    """Generate the dataset.
-
-    Args:
-        output_dir:
-            Directory to save the generated dataset.
-        prompt_path:
-            Path to the prompt file.
-        seed_tasks_path:
-            Path to the seed tasks file.
-        num_instructions_to_generate:
-            Number of instructions to generate.
-        model:
-            The model ID of the model to use for generation. Must be a base
-            model, not a finetuned one.
-        num_prompt_instructions:
-            Number of instructions to use as prompts for each generated instruction.
-        batch_size:
-            Number of requests to send to the model at once.
-        num_cpus:
-            Number of CPUs to use for parallel processing.
-        verbose:
-            Enable verbose logging.
-    """
+    """Generate the dataset."""
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",
