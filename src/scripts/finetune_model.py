@@ -49,7 +49,7 @@ logger = logging.getLogger("finetune_model")
     default=None,
     show_default=True,
     help="The new model ID to save the finetuned model as. If not provided, it will "
-    "be `danish-foundation-models/<base_model>-laerebogen`.",
+    "be `danish-foundation-models/<base_model>-<dataset_name>`.",
 )
 @click.option(
     "--dataset",
