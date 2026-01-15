@@ -165,7 +165,10 @@ def finetune_model(
         Returns:
             A batch of tokenized examples.
         """
-        documents = tokenizer.apply_chat_template(examples["messages"])
+        documents = [
+            tokenizer.apply_chat_template(conversation=conversation)
+            for conversation in examples["messages"]
+        ]
         model_inputs = tokenizer(documents)
         return model_inputs
 
