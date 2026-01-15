@@ -202,6 +202,13 @@ def finetune_model(
             tokenizer.apply_chat_template(conversation=conversation)
             for conversation in examples["messages"]
         ]
+        assert isinstance(documents, list), (
+            f"Expected documents to be of type list, got {type(documents)}"
+        )
+        assert all(isinstance(doc, str) for doc in documents), (
+            f"Expected all documents to be of type str, got "
+            f"{[type(doc) for doc in documents]}"
+        )
         model_inputs = tokenizer(documents)
         return model_inputs
 
