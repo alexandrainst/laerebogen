@@ -17,9 +17,9 @@ from transformers.data.data_collator import DataCollatorForLanguageModeling
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-from transformers.trainer import Trainer
 from transformers.trainer_utils import EvalPrediction, IntervalStrategy, SchedulerType
-from transformers.training_args import OptimizerNames, TrainingArguments
+from transformers.training_args import OptimizerNames
+from trl import SFTConfig, SFTTrainer
 
 logger = logging.getLogger(__package__)
 
@@ -181,6 +181,21 @@ def finetune_model(
         f"{type(tokenizer)}"
     )
 
+    # Add chat template to tokenizer
+    tokenizer.chat_template = (
+        "{% for message in messages %}"
+        "{% if loop.first and messages[0]['role'] != 'system' %}"
+        "{{ '<|im_start|>system\nYou are a helpful AI assistant named Munin, trained "
+        "by the Alexandra Institute<|im_end|>\n' }}"
+        "{% endif %}"
+        "{{'<|im_start|>' + message['role'] + '\n' + message['content'] + "
+        "'<|im_end|>' + '\n'}}"
+        "{% endfor %}"
+        "{% if add_generation_prompt %}"
+        "{{ '<|im_start|>assistant\n' }}"
+        "{% endif %}"
+    )
+
     mapped = dataset.map(
         partial(tokenize_function, tokenizer=tokenizer), batched=True, batch_size=16
     )
@@ -209,7 +224,7 @@ def finetune_model(
         1 if testing else (total_batch_size // per_device_batch_size // num_devices)
     )
 
-    training_args = TrainingArguments(
+    training_args = SFTConfig(
         output_dir="outputs",
         run_name=new_model_id,
         per_device_train_batch_size=per_device_batch_size,
@@ -254,7 +269,7 @@ def finetune_model(
 
     if is_main_process:
         logger.info("Creating the trainer...")
-    trainer = Trainer(
+    trainer = SFTTrainer(
         model=model,
         processing_class=tokenizer,
         train_dataset=train_split,
