@@ -249,6 +249,7 @@ def finetune_model(
         per_device_train_batch_size=per_device_batch_size,
         per_device_eval_batch_size=per_device_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
+        eval_accumulation_steps=2,
         num_train_epochs=num_epochs,
         warmup_ratio=warmup_ratio,
         learning_rate=learning_rate,
