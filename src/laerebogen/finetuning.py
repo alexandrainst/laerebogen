@@ -12,14 +12,13 @@ import wandb
 from datasets import Dataset, load_dataset
 from datasets.dataset_dict import DatasetDict
 from dotenv import load_dotenv
-from transformers import PreTrainedModel
+from transformers import PreTrainedModel, PreTrainedTokenizer
 from transformers.data.data_collator import DataCollatorForLanguageModeling
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
-from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 from transformers.trainer_utils import EvalPrediction, IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
-from trl import SFTConfig, SFTTrainer
+from trl import SFTConfig, SFTTrainer, clone_chat_template
 
 logger = logging.getLogger(__package__)
 
@@ -156,7 +155,7 @@ def finetune_model(
             f"Expected dataset to be of type Dataset, got {type(dataset)}"
         )
 
-    def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizerBase") -> dict:
+    def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizer") -> dict:
         """Tokenize a batch of examples.
 
         Args:
@@ -176,24 +175,21 @@ def finetune_model(
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_id, token=os.getenv("HF_API_TOKEN", True)
     )
-    assert isinstance(tokenizer, PreTrainedTokenizerBase), (
-        "Expected tokenizer to be of type PreTrainedTokenizerBase, got "
-        f"{type(tokenizer)}"
+    assert isinstance(tokenizer, PreTrainedTokenizer), (
+        f"Expected tokenizer to be of type PreTrainedTokenizer, got {type(tokenizer)}"
     )
 
-    # Add chat template to tokenizer
-    tokenizer.chat_template = (
-        "{% for message in messages %}"
-        "{% if loop.first and messages[0]['role'] != 'system' %}"
-        "{{ '<|im_start|>system\nYou are a helpful AI assistant named Munin, trained "
-        "by the Alexandra Institute<|im_end|>\n' }}"
-        "{% endif %}"
-        "{{'<|im_start|>' + message['role'] + '\n' + message['content'] + "
-        "'<|im_end|>' + '\n'}}"
-        "{% endfor %}"
-        "{% if add_generation_prompt %}"
-        "{{ '<|im_start|>assistant\n' }}"
-        "{% endif %}"
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model_id, token=os.getenv("HF_API_TOKEN", True)
+    )
+    assert isinstance(model, PreTrainedModel), (
+        f"Expected model to be of type PreTrainedModel, got {type(model)}"
+    )
+
+    model, tokenizer, tokens_added = clone_chat_template(
+        model=model,
+        tokenizer=tokenizer,
+        source_tokenizer_path="danish-foundation-models/Meta-Llama-3.1-8B-laerebogen",
     )
 
     mapped = dataset.map(
@@ -255,17 +251,11 @@ def finetune_model(
         neftune_noise_alpha=neftune_noise_alpha,
         hub_token=os.getenv("HF_API_TOKEN"),
         gradient_checkpointing_kwargs=dict(use_reentrant=False),
+        eos_token="<|im_end|>",
     )
 
     if is_main_process:
         logger.info(f"Loading base model and tokenizer with ID {base_model_id}...")
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model_id, token=os.getenv("HF_API_TOKEN", True)
-    )
-    assert isinstance(model, PreTrainedModel), (
-        f"Expected model to be of type PreTrainedModel, got {type(model)}"
-    )
 
     if is_main_process:
         logger.info("Creating the trainer...")
@@ -309,7 +299,7 @@ def finetune_model(
 
 
 def compute_metrics(
-    eval_pred: EvalPrediction, tokenizer: "PreTrainedTokenizerBase"
+    eval_pred: EvalPrediction, tokenizer: "PreTrainedTokenizer"
 ) -> dict[str, float]:
     """Compute metrics for the evaluation.
 
