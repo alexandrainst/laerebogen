@@ -275,7 +275,7 @@ def finetune_model(
         eval_dataset=val_split,
         args=training_args,
         compute_metrics=partial(compute_metrics, tokenizer=tokenizer),
-        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer),
+        data_collator=DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm=False),
     )
 
     if use_wandb and is_main_process and not testing:
