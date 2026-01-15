@@ -246,7 +246,7 @@ def finetune_model(
         save_strategy=IntervalStrategy.NO if testing else IntervalStrategy.STEPS,
         save_steps=save_steps,
         save_total_limit=2,
-        load_best_model_at_end=True,
+        load_best_model_at_end=True if not testing else False,
         optim=OptimizerNames.PAGED_ADAMW_8BIT,
         weight_decay=weight_decay,
         lr_scheduler_type=SchedulerType.COSINE,
