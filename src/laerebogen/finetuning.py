@@ -261,7 +261,6 @@ def finetune_model(
         neftune_noise_alpha=neftune_noise_alpha,
         hub_token=os.getenv("HF_API_TOKEN"),
         gradient_checkpointing_kwargs=dict(use_reentrant=False),
-        eos_token="<|end_of_text|>",
     )
 
     if is_main_process:
@@ -282,7 +281,7 @@ def finetune_model(
     if use_wandb and is_main_process and not testing:
         wandb.login(key=os.environ["WANDB_API_KEY"])
         wandb.init(
-            project="job-bot",
+            project="laerebogen-finetuning",
             config=dict(
                 base_model_id=base_model_id,
                 new_model_id=new_model_id,
