@@ -111,6 +111,13 @@ def finetune_model(
         f"device batch size ({per_device_batch_size})."
     )
 
+    if use_wandb and "WANDB_API_KEY" not in os.environ:
+        raise ValueError(
+            "Weights & Biases API key not set in environment variables. Please set "
+            "the `WANDB_API_KEY` environment variable to use Weights & Biases, or "
+            "run the script with `use_wandb=false` to disable Weights & Biases."
+        )
+
     # Note if we're on the main process, if we are running in a distributed setting
     is_main_process = os.getenv("RANK", "0") == "0"
 
@@ -285,6 +292,7 @@ def finetune_model(
     )
 
     if use_wandb and is_main_process and not testing:
+        wandb.login(key=os.environ["WANDB_API_KEY"], relogin=True)
         wandb.init(
             project="laerebogen-finetuning",
             config=dict(
