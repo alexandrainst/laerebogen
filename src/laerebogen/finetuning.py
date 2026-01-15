@@ -195,7 +195,7 @@ def finetune_model(
             "Tokenizer special tokens:\n"
             f"\tBOS token: {tokenizer.bos_token!r} (ID: {tokenizer.bos_token_id})\n"
             f"\tEOS token: {tokenizer.eos_token!r} (ID: {tokenizer.eos_token_id})\n"
-            f"\tPAD token: {tokenizer.pad_token!r} (ID: {tokenizer.pad_token_id})\n"
+            f"\tPAD token: {tokenizer.pad_token!r} (ID: {tokenizer.pad_token_id})"
         )
 
     if is_main_process:
