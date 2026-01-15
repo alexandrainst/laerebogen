@@ -155,6 +155,39 @@ def finetune_model(
             f"Expected dataset to be of type Dataset, got {type(dataset)}"
         )
 
+    if is_main_process:
+        logger.info("Loading tokenizer...")
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_id, token=os.getenv("HF_API_TOKEN", True)
+    )
+    assert isinstance(tokenizer, PreTrainedTokenizerFast), (
+        "Expected tokenizer to be of type PreTrainedTokenizerFast, got "
+        f"{type(tokenizer)}"
+    )
+
+    if is_main_process:
+        logger.info("Loading base model...")
+
+    model = AutoModelForCausalLM.from_pretrained(
+        base_model_id, token=os.getenv("HF_API_TOKEN", True)
+    )
+    assert isinstance(model, PreTrainedModel), (
+        f"Expected model to be of type PreTrainedModel, got {type(model)}"
+    )
+
+    if is_main_process:
+        logger.info("Setting up chat template...")
+
+    model, tokenizer, tokens_added = clone_chat_template(
+        model=model,
+        tokenizer=tokenizer,  # pyrefly: ignore[bad-argument-type]
+        source_tokenizer_path="danish-foundation-models/Meta-Llama-3.1-8B-laerebogen",
+    )
+
+    if is_main_process:
+        logger.info("Tokenizing the dataset...")
+
     def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizerFast") -> dict:
         """Tokenize a batch of examples.
 
@@ -171,30 +204,6 @@ def finetune_model(
         ]
         model_inputs = tokenizer(documents)
         return model_inputs
-
-    if is_main_process:
-        logger.info("Tokenizing the dataset...")
-
-    tokenizer = AutoTokenizer.from_pretrained(
-        base_model_id, token=os.getenv("HF_API_TOKEN", True)
-    )
-    assert isinstance(tokenizer, PreTrainedTokenizerFast), (
-        "Expected tokenizer to be of type PreTrainedTokenizerFast, got "
-        f"{type(tokenizer)}"
-    )
-
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model_id, token=os.getenv("HF_API_TOKEN", True)
-    )
-    assert isinstance(model, PreTrainedModel), (
-        f"Expected model to be of type PreTrainedModel, got {type(model)}"
-    )
-
-    model, tokenizer, tokens_added = clone_chat_template(
-        model=model,
-        tokenizer=tokenizer,  # pyrefly: ignore[bad-argument-type]
-        source_tokenizer_path="danish-foundation-models/Meta-Llama-3.1-8B-laerebogen",
-    )
 
     mapped = dataset.map(
         partial(tokenize_function, tokenizer=tokenizer), batched=True, batch_size=16
