@@ -1,7 +1,10 @@
 """Finetune a model on an instruction following dataset.
 
 Usage:
-    python finetune_model.py \
+    uv run accelerate launch \
+        --use-deepspeed \
+        --zero-stage 2 \
+        finetune_model.py \
         --base-model <base_model> \
         [--new-model <new_model>] \
         [--dataset <dataset>] \
