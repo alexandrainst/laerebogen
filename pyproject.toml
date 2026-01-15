@@ -9,23 +9,22 @@ authors = [
 ]
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "click>=8.2.1",
-    "datasets>=3.4.1",
-    "lingua-language-detector>=2.1.1",
-    "pandas>=2.3.1",
-    "pydantic>=2.11.7",
-    "python-dotenv>=1.1.1",
-    "ray>=2.48.0",
-    "rouge-score>=0.1.2",
-    "setuptools>=79.0.1",
-    "torch>=2.7.1",
-    "tqdm>=4.67.1",
-    "transformers>=4.54.0",
-    "trl>=0.20.0",
-    "wandb>=0.21.0",
-    "peft>=0.17.0",
-    "vllm>=0.9.1; platform_system == 'Linux'",
-    "unsloth>=2025.8.1; platform_system == 'Linux'",
+  "click>=8.2.1",
+  "datasets>=3.4.1",
+  "lingua-language-detector>=2.1.1",
+  "pandas>=2.3.1",
+  "pydantic>=2.11.7",
+  "python-dotenv>=1.1.1",
+  "ray>=2.48.0",
+  "rouge-score>=0.1.2",
+  "setuptools>=79.0.1",
+  "torch>=2.7.1",
+  "tqdm>=4.67.1",
+  "transformers>=4.54.0",
+  "trl>=0.20.0",
+  "wandb>=0.21.0",
+  "peft>=0.17.0",
+  "vllm>=0.9.1; platform_system == 'Linux'",
 ]
 
 [project.urls]
@@ -35,12 +34,12 @@ Issues = "https://github.com/alexandrainst/laerebogen/issues"
 [project.license]
 file = "LICENSE"
 
-[tool.uv]
-dev-dependencies = [
-    "pre-commit>=3.8.0",
-    "ruff>=0.7.1",
-    "mypy>=1.13.0",
-    "pip>=24.3.1",
+[dependency-groups]
+dev = [
+  "pre-commit>=3.8.0",
+  "ruff>=0.7.1",
+  "pip>=24.3.1",
+  "pyrefly>=0.44.2",
 ]
 
 [tool.ruff]
@@ -125,6 +124,9 @@ testpaths = [
     "tests",
     "src/laerebogen",
 ]
+
+[tool.pyrefly]
+site-package-path = [".venv/lib/python3.11/site-packages"]
 
 [build-system]
 requires = ["hatchling"]
