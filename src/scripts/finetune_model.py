@@ -103,6 +103,13 @@ logger = logging.getLogger("finetune_model")
     help="Total batch size for training.",
 )
 @click.option(
+    "--eval-accumulation-steps",
+    type=int,
+    default=None,
+    help="Number o faccumulation steps for evaluation to fit large batch sizes in "
+    "memory. If not provided, we use `per_device_batch_size` * 2.",
+)
+@click.option(
     "--num-epochs",
     type=int,
     default=1,
@@ -163,6 +170,7 @@ def main(
     neftune_noise_alpha: int,
     per_device_batch_size: int,
     total_batch_size: int,
+    eval_accumulation_steps: int | None,
     num_epochs: int,
     warmup_ratio: float,
     logging_steps: int,
@@ -193,6 +201,7 @@ def main(
         neftune_noise_alpha=neftune_noise_alpha,
         per_device_batch_size=per_device_batch_size,
         total_batch_size=total_batch_size,
+        eval_accumulation_steps=eval_accumulation_steps,
         num_epochs=num_epochs,
         warmup_ratio=warmup_ratio,
         logging_steps=logging_steps,

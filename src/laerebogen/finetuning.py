@@ -38,6 +38,7 @@ def finetune_model(
     neftune_noise_alpha: int,
     per_device_batch_size: int,
     total_batch_size: int,
+    eval_accumulation_steps: int | None,
     num_epochs: int,
     warmup_ratio: float,
     logging_steps: int,
@@ -83,6 +84,10 @@ def finetune_model(
             gradient accumulation to ensure that we accumulate enough gradients to
             update the model parameters in each update. Must be divisible by
             `per_device_batch_size`.
+        eval_accumulation_steps:
+            The number of evaluation steps to accumulate before performing a backward
+            pass. This can help to reduce memory usage during evaluation. If `None`, we
+            will use `per_device_batch_size` * 2.
         num_epochs:
             The number of epochs to train the model for. An epoch is one pass through
             the entire dataset.
@@ -110,6 +115,8 @@ def finetune_model(
         f"Total batch size ({total_batch_size}) must be divisible by per "
         f"device batch size ({per_device_batch_size})."
     )
+    if eval_accumulation_steps is None:
+        eval_accumulation_steps = per_device_batch_size * 2
 
     if use_wandb and "WANDB_API_KEY" not in os.environ:
         raise ValueError(
