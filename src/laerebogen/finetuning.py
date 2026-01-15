@@ -177,13 +177,26 @@ def finetune_model(
     )
 
     if is_main_process:
-        logger.info("Setting up chat template...")
+        logger.info("Setting up model and tokenizer...")
 
     model, tokenizer, tokens_added = clone_chat_template(
         model=model,
         tokenizer=tokenizer,  # pyrefly: ignore[bad-argument-type]
         source_tokenizer_path="danish-foundation-models/Meta-Llama-3.1-8B-laerebogen",
     )
+
+    # Ensure pad_token is defined
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    if is_main_process:
+        logger.info(
+            "Tokenizer special tokens:\n"
+            f"\tBOS token: {tokenizer.bos_token!r} (ID: {tokenizer.bos_token_id})\n"
+            f"\tEOS token: {tokenizer.eos_token!r} (ID: {tokenizer.eos_token_id})\n"
+            f"\tPAD token: {tokenizer.pad_token!r} (ID: {tokenizer.pad_token_id})\n"
+        )
 
     if is_main_process:
         logger.info("Tokenizing the dataset...")
