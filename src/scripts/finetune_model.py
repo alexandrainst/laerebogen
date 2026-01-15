@@ -63,7 +63,7 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--val-samples",
     type=int,
-    default=1024,
+    default=128,
     show_default=True,
     help="Number of validation samples to use.",
 )
