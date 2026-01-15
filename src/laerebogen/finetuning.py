@@ -12,7 +12,7 @@ import wandb
 from datasets import Dataset, load_dataset
 from datasets.dataset_dict import DatasetDict
 from dotenv import load_dotenv
-from transformers import PreTrainedModel, PreTrainedTokenizer
+from transformers import PreTrainedModel, PreTrainedTokenizerFast
 from transformers.data.data_collator import DataCollatorForLanguageModeling
 from transformers.models.auto.modeling_auto import AutoModelForCausalLM
 from transformers.models.auto.tokenization_auto import AutoTokenizer
@@ -155,7 +155,7 @@ def finetune_model(
             f"Expected dataset to be of type Dataset, got {type(dataset)}"
         )
 
-    def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizer") -> dict:
+    def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizerFast") -> dict:
         """Tokenize a batch of examples.
 
         Args:
@@ -175,8 +175,9 @@ def finetune_model(
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_id, token=os.getenv("HF_API_TOKEN", True)
     )
-    assert isinstance(tokenizer, PreTrainedTokenizer), (
-        f"Expected tokenizer to be of type PreTrainedTokenizer, got {type(tokenizer)}"
+    assert isinstance(tokenizer, PreTrainedTokenizerFast), (
+        "Expected tokenizer to be of type PreTrainedTokenizerFast, got "
+        f"{type(tokenizer)}"
     )
 
     model = AutoModelForCausalLM.from_pretrained(
@@ -188,7 +189,7 @@ def finetune_model(
 
     model, tokenizer, tokens_added = clone_chat_template(
         model=model,
-        tokenizer=tokenizer,
+        tokenizer=tokenizer,  # pyrefly: ignore[bad-argument-type]
         source_tokenizer_path="danish-foundation-models/Meta-Llama-3.1-8B-laerebogen",
     )
 
@@ -251,7 +252,7 @@ def finetune_model(
         neftune_noise_alpha=neftune_noise_alpha,
         hub_token=os.getenv("HF_API_TOKEN"),
         gradient_checkpointing_kwargs=dict(use_reentrant=False),
-        eos_token="<|im_end|>",
+        eos_token="<|end_of_text|>",
     )
 
     if is_main_process:
@@ -299,7 +300,7 @@ def finetune_model(
 
 
 def compute_metrics(
-    eval_pred: EvalPrediction, tokenizer: "PreTrainedTokenizer"
+    eval_pred: EvalPrediction, tokenizer: "PreTrainedTokenizerFast"
 ) -> dict[str, float]:
     """Compute metrics for the evaluation.
 
