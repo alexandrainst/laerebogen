@@ -207,7 +207,8 @@ def finetune_model(
         )
         assert all(isinstance(doc, str) for doc in documents), (
             f"Expected all documents to be of type str, got "
-            f"{[type(doc) for doc in documents]}"
+            f"{set([type(doc) for doc in documents])} - here is an example: "
+            f"{documents[0]!r}"
         )
         model_inputs = tokenizer(documents)
         return model_inputs
