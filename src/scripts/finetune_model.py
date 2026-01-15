@@ -91,7 +91,7 @@ logger = logging.getLogger("finetune_model")
 @click.option(
     "--per-device-batch-size",
     type=int,
-    default=8,
+    default=2,
     show_default=True,
     help="Batch size per device.",
 )
