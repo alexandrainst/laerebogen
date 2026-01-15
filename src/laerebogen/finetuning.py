@@ -182,10 +182,7 @@ def finetune_model(
     )
 
     mapped = dataset.map(
-        partial(tokenize_function, tokenizer=tokenizer),
-        batched=True,
-        batch_size=16,
-        remove_columns=["src", "tgt"],
+        partial(tokenize_function, tokenizer=tokenizer), batched=True, batch_size=16
     )
     assert isinstance(mapped, Dataset), (
         f"Expected mapped to be of type Dataset, got {type(mapped)}"
