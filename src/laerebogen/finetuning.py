@@ -302,7 +302,6 @@ def finetune_model(
     )
 
     if use_wandb and is_main_process and not testing:
-        wandb.login(key=os.environ["WANDB_API_KEY"], relogin=True)
         wandb.init(
             project="laerebogen-finetuning",
             config=dict(
