@@ -128,6 +128,9 @@ def finetune_model(
     # Note if we're on the main process, if we are running in a distributed setting
     is_main_process = os.getenv("RANK", "0") == "0"
 
+    if use_wandb and is_main_process and not testing:
+        wandb.login(key=os.environ["WANDB_API_KEY"], relogin=True)
+
     # Load the dataset from the Hugging Face Hub
     if is_main_process:
         logger.info(f"Loading dataset with ID {dataset_id}...")
