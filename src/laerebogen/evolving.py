@@ -39,34 +39,7 @@ METHODS = dict(
 )
 
 
-FORMATS = [
-    "XML",
-    "HTML",
-    "JSON",
-    "CSV",
-    "SQL",
-    "Markdown",
-    "Python",
-    "JavaScript",
-    "Java",
-    "C++",
-    "C#",
-    "Golang",
-    "Rust",
-    "PHP",
-    "Ruby",
-    "Shell",
-    "Bash",
-    "PowerShell",
-    "TypeScript",
-    "Kotlin",
-    "Swift",
-    "Rlang",
-    "MATLAB",
-    "LaTeX",
-    "YAML",
-    "TOML",
-]
+FORMATS = ["JSON", "YAML", "Markdown", "Python"]
 
 
 def evolve_instructions(
