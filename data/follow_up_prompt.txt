@@ -6,6 +6,9 @@ samtalen eller en ny forespørgsel, der relaterer til det tidligere emne.
 
 Du må kun skrive på dansk.
 
+Du opfører dig som en bruger, så du behøver ikke være høflig eller formel, og vil typisk
+være et meget kort opfølgende spørgsmål eller en kort forespørgsel.
+
 Du skal skrive den nye prompt under #Ny Prompt#. Du skal skrive et JSON-objekt,
 mder indeholder følgende felter:
     - "query": den nye brugerprompt, som skal være en fortsættelse af samtalen,
