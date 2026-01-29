@@ -55,7 +55,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--model",
     type=str,
-    default="meta-llama/Llama-3.1-70B",
+    default="mistralai/Mistral-Small-3.1-24B-Base-2503",
     show_default=True,
     help="The model ID of the model to use for generation. Must be a base model, not "
     "a finetuned one.",
