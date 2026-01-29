@@ -55,10 +55,10 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--model",
     type=str,
-    default="google/gemma-3-27b-pt",
+    default="meta-llama/Llama-3.1-70B",
     show_default=True,
     help="The model ID of the model to use for generation. Must be a base model, not "
-    "a finetuned one. Defaults to 'google/gemma-3-27b-pt'.",
+    "a finetuned one.",
 )
 @click.option(
     "--num-prompt-instructions",

@@ -41,7 +41,7 @@ from laerebogen.vllm_utils import load_vllm_model
 @click.option(
     "--model",
     type=str,
-    default="google/gemma-3-27b-it",
+    default="deepcogito/cogito-v1-preview-llama-70B",
     show_default=True,
     help="Model ID of the instruction-tuned large language model used to create the "
     "follow-up queries and answers.",
