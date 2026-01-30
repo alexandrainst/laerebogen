@@ -55,7 +55,7 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option(
     "--model",
     type=str,
-    default="Qwen/Qwen3-30B-A3B-Base",
+    default="google/gemma-3-27b-pt",
     show_default=True,
     help="The model ID of the model to use for generation. Must be a base model, not "
     "a finetuned one.",
