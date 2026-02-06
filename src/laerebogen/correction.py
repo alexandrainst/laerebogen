@@ -135,7 +135,7 @@ def correct_grammar_in_instructions(
             )
 
     # Filter the corrected instructions
-    logger.info("Filtering corrected instructions...")
+    logger.info(f"Filtering {len(corrected_instructions):,} corrected instructions...")
     corrected_instructions = [
         instruction
         for instruction in tqdm(
@@ -223,7 +223,7 @@ def correct_bad_quality_instructions(
             instruction.output = new_instruction.output.strip()
 
     # Filter the corrected instructions
-    logger.info("Filtering corrected instructions...")
+    logger.info(f"Filtering {len(corrected_instructions):,} corrected instructions...")
     corrected_instructions = [
         instruction
         for instruction in tqdm(
