@@ -13,5 +13,3 @@ Du bør gøre dit bedste for ikke at gøre den #Omskrevet Prompt# for lang, #Oms
 
 #Original Prompt#:
 {instruction}
-
-#Omskrevet Prompt#:

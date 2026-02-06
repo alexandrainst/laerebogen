@@ -11,5 +11,3 @@ Du skal kun skrive teksten uden yderligere tekst.
 
 #Original Tekst#:
 {text}
-
-#Rettet Tekst#:

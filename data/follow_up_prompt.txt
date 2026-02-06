@@ -16,5 +16,3 @@ mder indeholder følgende felter:
 
 #Samtale#:
 {conversation}
-
-#Ny Prompt#:
