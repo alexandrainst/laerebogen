@@ -7,7 +7,6 @@ instructions using a decoder model.
 [2]: https://doi.org/10.18653/v1/2023.acl-long.754
 """
 
-import collections.abc as c
 import json
 import logging
 import random
@@ -213,13 +212,6 @@ def post_process_response(
         )
         return []
 
-    def corpus() -> c.Generator[str, None, None]:
-        """A generator that yields all previous instructions and new instructions."""
-        for instruction in previous_instructions:
-            yield instruction
-        for instruction_object in instruction_objects:
-            yield instruction_object.instruction
-
     # Remove duplicates
     deduper = Deduper(
         store_mask_to_disk=False,
@@ -228,9 +220,9 @@ def post_process_response(
         store_lsh_cache_to_disk=False,
         return_generator=True,
     )
-    unique_new_instructions = [
-        instruction
-        for instruction in tqdm(
+    instruction_objects = [
+        instruction_objects[idx - len(previous_instructions)]
+        for idx, duplicate in tqdm(
             deduper.deduplicate(
                 corpus=(
                     previous_instructions  #  type: ignore[bad-argument-type]
@@ -243,12 +235,7 @@ def post_process_response(
             leave=False,
             total=len(instruction_objects),
         )
-        if instruction not in previous_instructions
-    ]
-    new_instruction_objects = [
-        instruction_object
-        for instruction_object in instruction_objects
-        if instruction_object.instruction in unique_new_instructions
+        if idx >= len(previous_instructions) and not duplicate
     ]
 
-    return new_instruction_objects
+    return instruction_objects
