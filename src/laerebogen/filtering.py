@@ -196,7 +196,9 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
     if instruction_sample.input:
         texts_that_need_detection.append(instruction_sample.input)
 
-    detector = LanguageDetectorBuilder.from_all_languages().build()
+    detector = LanguageDetectorBuilder.from_languages(
+        Language.DANISH, Language.ENGLISH
+    ).build()
     language_confidences = [
         detector.compute_language_confidence(text=text, language=Language.DANISH)
         for text in texts_that_need_detection
