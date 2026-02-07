@@ -1,10 +1,10 @@
 """Data models used in the project."""
 
 import json
+import typing as t
 from dataclasses import dataclass, field
-from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 @dataclass
@@ -17,7 +17,9 @@ class Conversation:
             with keys "role" and "content".
     """
 
-    messages: list[dict[Literal["role", "content"], str]] = field(default_factory=list)
+    messages: list[dict[t.Literal["role", "content"], str]] = field(
+        default_factory=list
+    )
 
     def add_message(self, role: str, content: str) -> None:
         """Add a message to the conversation.
@@ -192,9 +194,11 @@ class GeneratedInstruction(BaseModel):
 
 
 class GeneratedInstructions(BaseModel):
-    """A list of generated instructions."""
+    """A list of 20 generated instructions."""
 
-    instructions: list[GeneratedInstruction]
+    instructions: t.Annotated[
+        list[GeneratedInstruction], Field(min_items=20, max_items=20)
+    ]
 
 
 class GrammarCorrectionResponse(BaseModel):
