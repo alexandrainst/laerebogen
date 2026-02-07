@@ -1,6 +1,7 @@
 """Filtering of generated instructions."""
 
 import logging
+import re
 
 from .data_models import InstructionSample
 
@@ -17,7 +18,12 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
     Returns:
         True if the instruction should be kept, False if it should be filtered out.
     """
-    all_filters = [not_too_short, not_too_long, is_not_similar_to_existing_instructions]
+    all_filters = [
+        not_too_short,
+        not_too_long,
+        is_not_similar_to_existing_instructions,
+        does_not_contain_prompt_words,
+    ]
     for filter_fn in all_filters:
         if not filter_fn(instruction_sample):
             logger.debug(
@@ -72,3 +78,25 @@ def is_not_similar_to_existing_instructions(
         return True
     max_similarity = max(instruction_sample.most_similar_instructions.values())
     return max_similarity < 0.7
+
+
+def does_not_contain_prompt_words(instruction_sample: InstructionSample) -> bool:
+    """Filter out instructions that contain prompt words.
+
+    Args:
+        instruction_sample:
+            The instruction sample to filter.
+
+    Returns:
+        True if the instruction should be kept, False if it should be filtered out.
+    """
+    prompt_words_regex = re.compile(pattern=r"Instruktion|Input|Output")
+    instruction_contains_prompt_words = (
+        re.search(pattern=prompt_words_regex, string=instruction_sample.instruction)
+        is not None
+    )
+    output_contains_prompt_words = (
+        re.search(pattern=prompt_words_regex, string=instruction_sample.output)
+        is not None
+    )
+    return not instruction_contains_prompt_words and not output_contains_prompt_words
