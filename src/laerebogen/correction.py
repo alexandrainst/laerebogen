@@ -69,6 +69,9 @@ def correct_grammar_in_instructions(
         prompts=prompts, model=model, response_format=GrammarCorrectionResponse
     )
     for instruction, response in zip(corrected_instructions, responses):
+        response.completion = GrammarCorrectionResponse.model_validate_json(
+            response.completion
+        ).corrected_instruction
         if response.done_reason == "stop":
             instruction.instruction = (
                 response.completion.strip()
