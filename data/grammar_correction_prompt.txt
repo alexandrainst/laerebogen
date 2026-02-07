@@ -1,7 +1,6 @@
 Du er en professionel dansk korrekturlæser.
 
-Skriv følgende tekst om, hvor du retter all stavefejl og grammatiske fejl, uden at ændre
-betydningen af teksten.
+Skriv følgende tekst om, hvor du retter all stavefejl og grammatiske fejl, uden at ændre betydningen af teksten.
 
 <tekst>
 {text}
@@ -11,5 +10,4 @@ Du må kun skrive på dansk.
 
 Hvis teksten er tom, så skal du også bare outputte en tom tekststreng.
 
-Du skal outputte et JSON objekt med nøglen 'corrected_text' og værdien som den rettede
-tekst.
+Du skal outputte et JSON objekt med nøglen 'corrected_text' og værdien som den rettede tekst.

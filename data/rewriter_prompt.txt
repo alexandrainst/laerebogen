@@ -6,16 +6,13 @@ Dit mål er at omskrive en følgende prompt til en mere kompleks version:
 {instruction}
 </original_prompt>
 
-Din omskrivning må ikke udelade vigtige dele i den original prompt, såsom tabeller og
-kode.
+Din omskrivning må ikke udelade vigtige dele i den original prompt, såsom tabeller og kode.
 
 Du må kun skrive på dansk.
 
 Du SKAL komplicere den givne prompt ved hjælp af følgende metode:
 {method}
 
-Du bør gøre dit bedste for ikke at gøre den omskrevne prompt for lang: du kan kun
-tilføje 10 til 20 ord til den original prompt.
+Du bør gøre dit bedste for ikke at gøre den omskrevne prompt for lang: du kan kun tilføje 10 til 20 ord til den original prompt.
 
-Du skal outputte en JSON objekt med nøglen 'new_prompt' og værdien som den omskrevne
-prompt.
+Du skal outputte en JSON objekt med nøglen 'new_prompt' og værdien som den omskrevne prompt.

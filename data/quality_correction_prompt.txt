@@ -6,17 +6,12 @@ Du er givet følgende originale prompt:
 {prompt}
 </original_prompt>
 
-Du skal vurdere, om den er af god kvalitet. Hvis den ikke er, skal du skrive prompten
-om, så den er af høj kvalitet, men uden at ændre betydningen af prompten.
+Du skal vurdere, om den er af god kvalitet. Hvis den ikke er, skal du skrive prompten om, så den er af høj kvalitet, men uden at ændre betydningen af prompten.
 
-God kvalitet betyder, at instruktionen er klar, præcis og let at forstå, og at outputtet
-er et passende svar på instruktionen og inputtet.
+God kvalitet betyder, at instruktionen er klar, præcis og let at forstå, og at outputtet er et passende svar på instruktionen og inputtet.
 
-Hvis den original prompt er af fin kvalitet allerede, så kan du blot outputte den samme
-prompt og output.
+Hvis den original prompt er af fin kvalitet allerede, så kan du blot outputte den samme prompt og output.
 
 Du må kun skrive på dansk.
 
-Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor
-'instruction' værdien er den rettede instruktion, og 'output' er svaret fra AI'en til
-den rettede prompt.
+Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er den rettede instruktion, og 'output' er svaret fra AI'en til den rettede prompt.

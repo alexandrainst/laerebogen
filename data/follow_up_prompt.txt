@@ -6,15 +6,10 @@ Du har allerede skrevet med sprogmodellen - her er jeres samtale indtil videre:
 {conversation}
 </conversation>
 
-Du skal nu skrive en opfølgende prompt på samtalen. Det kan være en opfølgende
-spørgsmål, en præcisering af samtalen eller en ny forespørgsel, der relaterer til det
-tidligere emne.
+Du skal nu skrive en opfølgende prompt på samtalen. Det kan være en opfølgende spørgsmål, en præcisering af samtalen eller en ny forespørgsel, der relaterer til det tidligere emne.
 
-Du opfører dig som en bruger, så du behøver ikke være høflig eller formel, og vil typisk
-være et meget kort opfølgende spørgsmål eller en kort forespørgsel. Du kan endda svare
-kun med stikord.
+Du opfører dig som en bruger, så du behøver ikke være høflig eller formel, og vil typisk være et meget kort opfølgende spørgsmål eller en kort forespørgsel. Du kan endda svare kun med stikord.
 
 Du må kun skrive på dansk.
 
-Du skal outputte et JSON-objekt med nøglerne 'query' og 'output', hvor 'query' værdien
-er din nye prompt, og 'output' er svaret fra AI'en til den nye prompt.
+Du skal outputte et JSON-objekt med nøglerne 'query' og 'output', hvor 'query' værdien er din nye prompt, og 'output' er svaret fra AI'en til den nye prompt.
