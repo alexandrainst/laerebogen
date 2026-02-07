@@ -64,11 +64,11 @@ seed prompts can be found
 With the seed prompts in hand, we used the [Alpaca
 recipe](https://github.com/tatsu-lab/stanford_alpaca) to generate an initial instruction
 dataset with 52,000 examples, based on the
-[Gemma-3-27b-pt](https://hf.co/google/gemma-3-27b-pt) base decoder model. This used the
-seed prompts from the previous step as few-shot examples, and were filtered using the
-same filters as in the Alpaca recipe, with the additional filter that the generated
-examples had to be in Danish, which was checked using the [Lingua language detection
-package](https://github.com/pemistahl/lingua-py).
+[Qwen/Qwen3-235B-A22B-Instruct-2507-FP8](https://hf.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8)
+decoder model. This used the seed prompts from the previous step as few-shot examples,
+and were filtered using filters that checked that the generated examples were not too
+short or too long, were not too similar to existing instructions, and did not contain
+prompt words.
 
 ### Step 3: Grammar Correction
 
