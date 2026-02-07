@@ -38,9 +38,10 @@ from laerebogen.data_models import InstructionSample
 @click.option(
     "--model",
     type=str,
-    default="deepcogito/cogito-v1-preview-llama-70B",
+    default="google/gemma-3-27b-it",
     show_default=True,
-    help="Model ID of the instruction-tuned large language model to use for evolution.",
+    help="Model ID of the instruction-tuned large language model to use for grammar "
+    "correction.",
 )
 @click.option(
     "--verbose",
