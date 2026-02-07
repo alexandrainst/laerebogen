@@ -9,12 +9,10 @@ Usage:
         [--model <model>] \
         [--num-prompt-instructions <num_prompt_instructions>] \
         [--batch-size <batch_size>] \
-        [--num-cpus <num_cpus>] \
         [--verbose]
 """
 
 import logging
-import multiprocessing as mp
 import os
 import warnings
 
@@ -73,14 +71,6 @@ from laerebogen.generation import generate_instruction_following_data
     show_default=True,
     help="Number of requests to send to the model at once.",
 )
-@click.option(
-    "--num-cpus",
-    type=int,
-    default=-1,
-    show_default=True,
-    help="Number of CPUs to use for parallel processing. Set to -1 to use all "
-    "available CPUs.",
-)
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
 def main(
     output_dir: str,
@@ -90,7 +80,6 @@ def main(
     model: str,
     num_prompt_instructions: int,
     batch_size: int,
-    num_cpus: int,
     verbose: bool,
 ) -> None:
     """Generate the dataset."""
@@ -113,7 +102,6 @@ def main(
         model_id=model,
         num_prompt_instructions=num_prompt_instructions,
         batch_size=batch_size,
-        num_cpus=mp.cpu_count() if num_cpus == -1 else num_cpus,
     )
 
 

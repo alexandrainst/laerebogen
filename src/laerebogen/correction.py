@@ -7,8 +7,6 @@ from pathlib import Path
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from laerebogen.data_models import GeneratedInstruction
-
 from .data_models import GrammarCorrectionResponse, InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
@@ -190,12 +188,12 @@ def correct_bad_quality_instructions(
     ]
 
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=GeneratedInstruction
+        prompts=prompts, model=model, response_format=InstructionSample
     )
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
             try:
-                new_instruction = GeneratedInstruction.model_validate_json(
+                new_instruction = InstructionSample.model_validate_json(
                     json_data=response.completion
                 )
             except ValidationError:

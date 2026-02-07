@@ -8,9 +8,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from laerebogen.data_models import GeneratedInstruction
-
-from .data_models import Conversation
+from .data_models import Conversation, InstructionSample
 from .vllm_utils import generate_text_with_vllm
 
 if t.TYPE_CHECKING:
@@ -66,12 +64,12 @@ def add_follow_up_to_conversations(
     ]
 
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=GeneratedInstruction
+        prompts=prompts, model=model, response_format=InstructionSample
     )
     for conversation, response in zip(extended_conversations, responses):
         if response.done_reason == "stop":
             try:
-                new_query = GeneratedInstruction.model_validate_json(
+                new_query = InstructionSample.model_validate_json(
                     json_data=response.completion
                 )
             except ValidationError:

@@ -105,73 +105,6 @@ class Conversation:
 
 
 @dataclass
-class InstructionSample:
-    """An instruction sample for the model.
-
-    Attributes:
-        instruction:
-            The instruction to be followed by the model.
-        output:
-            The expected output of the instruction.
-        most_similar_instructions:
-            A dictionary of the most similar instructions to the current instruction,
-            with their similarity scores.
-        avg_similarity_score:
-            The average similarity score of the most similar instructions.
-        instruction_tokens:
-            A list of token IDs representing the instruction.
-    """
-
-    instruction: str
-    output: str
-    most_similar_instructions: dict[str, float] = field(default_factory=dict)
-    avg_similarity_score: float = float("nan")
-    instruction_tokens: list[str] = field(default_factory=list)
-
-    def json(self) -> str:
-        """Convert the instruction sample to a JSON string.
-
-        Returns:
-            A JSON string representation of the instruction sample.
-        """
-        return json.dumps(
-            dict(
-                instruction=self.instruction,
-                output=self.output,
-                most_similar_instructions=self.most_similar_instructions,
-                avg_similarity_score=self.avg_similarity_score,
-            ),
-            ensure_ascii=False,
-        )
-
-    @classmethod
-    def from_json(cls, json_str: str) -> "InstructionSample":
-        """Create an instruction sample from a JSON string.
-
-        Args:
-            json_str:
-                A JSON string representation of the instruction sample.
-
-        Returns:
-            An instance of InstructionSample.
-
-        Raises:
-            ValueError:
-                If the JSON string is invalid.
-        """
-        try:
-            data = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON string: {json_str!r}") from e
-        return cls(
-            instruction=data["instruction"],
-            output=data["output"],
-            most_similar_instructions=data.get("most_similar_instructions", {}),
-            avg_similarity_score=data.get("avg_similarity_score", float("nan")),
-        )
-
-
-@dataclass
 class Response:
     """A response from an LLM.
 
@@ -186,18 +119,25 @@ class Response:
     done_reason: str | None
 
 
-class GeneratedInstruction(BaseModel):
-    """A generated instruction."""
+class InstructionSample(BaseModel):
+    """An instruction sample for the model.
 
-    instruction: t.Annotated[str, Field(min_length=1)]
-    output: t.Annotated[str, Field(min_length=1)]
+    Attributes:
+        instruction:
+            The instruction to be followed by the model.
+        output:
+            The expected output of the instruction.
+    """
+
+    instruction: str
+    output: str
 
 
-class GeneratedInstructions(BaseModel):
+class InstructionSamples(BaseModel):
     """A list of 20 generated instructions."""
 
     instructions: t.Annotated[
-        list[GeneratedInstruction], Field(min_items=20, max_items=20)
+        list[InstructionSample], Field(min_items=20, max_items=20)
     ]
 
 

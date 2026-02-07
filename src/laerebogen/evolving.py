@@ -16,9 +16,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from laerebogen.data_models import EvolvedInstruction, EvolvedOutput
-
-from .data_models import InstructionSample
+from .data_models import EvolvedInstruction, EvolvedOutput, InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm
 

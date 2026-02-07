@@ -7,22 +7,18 @@ instructions using a decoder model.
 [2]: https://doi.org/10.18653/v1/2023.acl-long.754
 """
 
+import collections.abc as c
 import json
 import logging
 import random
 from copy import deepcopy
-from functools import partial
-from multiprocessing import Pool
 from pathlib import Path
 
-import numpy as np
+from nlp_dedup import Deduper
 from pydantic import ValidationError
-from rouge_score import rouge_scorer
 from tqdm.auto import tqdm
 
-from laerebogen.data_models import GeneratedInstructions
-
-from .data_models import InstructionSample, Response
+from .data_models import InstructionSample, InstructionSamples, Response
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
@@ -37,7 +33,6 @@ def generate_instruction_following_data(
     model_id: str,
     num_prompt_instructions: int,
     batch_size: int,
-    num_cpus: int,
 ) -> None:
     """Generate instructions following the seed tasks.
 
@@ -64,8 +59,6 @@ def generate_instruction_following_data(
             Number of instructions to use as prompts for each generated instruction.
         batch_size:
             Number of requests to send to the model at once.
-        num_cpus:
-            Number of CPUs to use for parallel processing.
     """
     logger.info(f"Loading model {model_id!r} for generating instructions...")
     model = load_vllm_model(model_id=model_id)
@@ -102,9 +95,6 @@ def generate_instruction_following_data(
             f"Loaded {len(machine_instruction_data):,} machine-generated instructions."
         )
 
-    # Initialise the Rouge scorer for similarity scoring
-    scorer = rouge_scorer.RougeScorer(rouge_types=["rougeL"], use_stemmer=False)
-
     # Initialise the progress bar
     progress_bar = tqdm(
         total=num_instructions_to_generate,
@@ -116,9 +106,6 @@ def generate_instruction_following_data(
     all_instructions = [
         seed_instruction.instruction for seed_instruction in seed_instruction_data
     ] + [instruction["instruction"] for instruction in machine_instruction_data]
-    all_instruction_tokens = [
-        scorer._tokenizer.tokenize(text=inst) for inst in all_instructions
-    ]
 
     # Start generating instructions
     while len(machine_instruction_data) < num_instructions_to_generate:
@@ -136,7 +123,7 @@ def generate_instruction_following_data(
 
         # Generate new instructions with the LLM
         responses = generate_text_with_vllm(
-            prompts=batch_inputs, model=model, response_format=GeneratedInstructions
+            prompts=batch_inputs, model=model, response_format=InstructionSamples
         )
 
         # Process the generated instructions
@@ -145,11 +132,7 @@ def generate_instruction_following_data(
             iterable=responses, desc="Processing responses", leave=False
         ):
             new_instructions = post_process_response(
-                response=response,
-                scorer=scorer,
-                previous_instructions=all_instructions,
-                previous_instruction_tokens=all_instruction_tokens,
-                num_cpus=num_cpus,
+                response=response, previous_instructions=all_instructions
             )
             for instruction in new_instructions:
                 if keep_instruction(instruction_sample=instruction):
@@ -160,9 +143,6 @@ def generate_instruction_following_data(
             machine_instruction_data.extend(instruction_data)
             all_instructions.extend(
                 instruction.instruction for instruction in instruction_data
-            )
-            all_instruction_tokens.extend(
-                instruction.instruction_tokens for instruction in instruction_data
             )
 
             # Update the progress bar
@@ -207,36 +187,24 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
 
 
 def post_process_response(
-    response: Response,
-    scorer: rouge_scorer.RougeScorer,
-    previous_instructions: list[str],
-    previous_instruction_tokens: list[list[str]],
-    num_cpus: int,
+    response: Response, previous_instructions: list[str]
 ) -> list[InstructionSample]:
     """Post-process the response from the model to extract instructions.
 
     Args:
         response:
             The response from the model.
-        scorer:
-            The Rouge scorer used to compute similarity scores.
         previous_instructions:
             A list of all previously generated instructions.
-        previous_instruction_tokens:
-            A list of tokenized versions of all previously generated instructions.
-        num_cpus:
-            Number of CPUs to use for parallel processing of ROUGE scores.
 
     Returns:
         A list of instructions extracted from the response.
     """
-    # Copy previous_instructions and previous_instruction_tokens to avoid modifying the
-    # original lists
+    # Copy previous_instructions to avoid modifying the original lists
     previous_instructions = deepcopy(previous_instructions)
-    previous_instruction_tokens = deepcopy(previous_instruction_tokens)
 
     try:
-        raw_instructions = GeneratedInstructions.model_validate_json(
+        instruction_objects = InstructionSamples.model_validate_json(
             response.completion
         ).instructions
     except ValidationError:
@@ -245,46 +213,29 @@ def post_process_response(
         )
         return []
 
-    instructions: list[InstructionSample] = []
-    for idx, instruction_object in enumerate(raw_instructions, start=1):
-        # If the decoding stops due to length, the last example is likely truncated so
-        # we discard it
-        if idx == len(raw_instructions) and response.done_reason == "length":
-            logger.debug(
-                "The last instruction was truncated due to length. Skipping it."
-            )
-            continue
+    def corpus() -> c.Generator[str, None, None]:
+        """A generator that yields all previous instructions and new instructions."""
+        for instruction in previous_instructions:
+            yield instruction
+        for instruction_object in instruction_objects:
+            yield instruction_object.instruction
 
-        # Extract instruction and output
-        instruction = instruction_object.instruction.strip()
-        output = instruction_object.output.strip()
-
-        # Compute the similarity of the new instruction to all existing instructions
-        new_instruction_tokens = scorer._tokenizer.tokenize(text=instruction)
-        with Pool(processes=num_cpus) as p:
-            rouge_scores = p.map(
-                partial(rouge_scorer._score_lcs, new_instruction_tokens),
-                previous_instruction_tokens,
-            )
-        rouge_scores = [score.fmeasure for score in rouge_scores]
-        most_similar_instructions = {
-            previous_instructions[i]: rouge_scores[i]
-            for i in np.argsort(rouge_scores)[-10:][::-1]
-        }
-
-        # Add the new instruction and its tokens to the previous lists, so that future
-        # instructions can be compared to it
-        previous_instructions.append(instruction)
-        previous_instruction_tokens.append(new_instruction_tokens)
-
-        # Store the instruction
-        new_instruction = InstructionSample(
-            instruction=instruction,
-            output=output,
-            most_similar_instructions=most_similar_instructions,
-            avg_similarity_score=float(np.mean(rouge_scores)),
-            instruction_tokens=new_instruction_tokens,
+    # Remove duplicates
+    deduper = Deduper(return_generator=True)
+    unique_new_instructions = [
+        instruction
+        for instruction in tqdm(
+            deduper.deduplicate(corpus=corpus()) or [],
+            desc="Removing duplicates",
+            leave=False,
+            total=len(instruction_objects),
         )
-        instructions.append(new_instruction)
+        if instruction not in previous_instructions
+    ]
+    new_instruction_objects = [
+        instruction_object
+        for instruction_object in instruction_objects
+        if instruction_object.instruction in unique_new_instructions
+    ]
 
-    return instructions
+    return new_instruction_objects
