@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_text_with_vllm(
-    prompts: list[str], model: "LLM", response_format: t.Type[BaseModel] | None = None
+    prompts: list, model: "LLM", response_format: t.Type[BaseModel] | None = None
 ) -> list[Response]:
     """Decode with vLLM.
 
@@ -38,7 +38,16 @@ def generate_text_with_vllm(
 
     Returns:
         A list of responses.
+
+    Raises:
+        TypeError:
+            If any of the prompts is not a string.
     """
+    if not all(isinstance(prompt, str) for prompt in prompts):
+        raise TypeError(
+            "All prompts must be strings. Got the types {set(map(type, prompts)).}"
+        )
+
     sampling_params = SamplingParams(
         temperature=TEMPERATURE,
         max_tokens=MAX_CONTEXT_LENGTH,
