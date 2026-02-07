@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass, field
 from typing import Literal
 
+from pydantic import BaseModel
+
 
 @dataclass
 class Conversation:
@@ -190,3 +192,9 @@ class Response:
 
     completion: str
     done_reason: str | None
+
+
+class GrammarCorrectionResponse(BaseModel):
+    """A response from the grammar correction model."""
+
+    corrected_instruction: str

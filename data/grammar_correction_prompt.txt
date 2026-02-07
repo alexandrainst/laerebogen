@@ -1,13 +1,15 @@
 Jeg vil have dig til at fungere som en professionel korrekturlæser.
 
-Skriv følgende #Original Tekst# om, hvor du retter all stavefejl og grammatiske fejl,
-uden at ændre betydningen af teksten.
+Skriv følgende tekst om, hvor du retter all stavefejl og grammatiske fejl, uden at ændre
+betydningen af teksten.
 
 Du må kun skrive på dansk.
 
-Du skal skrive den rettede tekst under #Rettet Tekst#. Hvis teksten er '<empty>', så skal du også skrive '<empty>' under #Rettet Tekst#.
+Hvis teksten er '<empty>', så skal du også bare skrive '<empty>'.
 
-Du skal kun skrive teksten uden yderligere tekst.
+Du skal outputte et JSON objekt med nøglen 'corrected_instruction' og værdien som
+den rettede tekst.
 
-#Original Tekst#:
+<tekst>
 {text}
+</tekst>

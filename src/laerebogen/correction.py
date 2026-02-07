@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, ValidationError
 from tqdm.auto import tqdm
 
-from .data_models import InstructionSample
+from .data_models import GrammarCorrectionResponse, InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
@@ -65,7 +65,9 @@ def correct_grammar_in_instructions(
             leave=False,
         )
     ]
-    responses = generate_text_with_vllm(prompts=prompts, model=model)
+    responses = generate_text_with_vllm(
+        prompts=prompts, model=model, response_format=GrammarCorrectionResponse
+    )
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
             instruction.instruction = (
