@@ -203,7 +203,8 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
         detector.compute_language_confidence(text=text, language=Language.DANISH)
         for text in texts_that_need_detection
     ]
-    return all(confidence > 0.75 for confidence in language_confidences)
+    logger.info(f"Language confidences: {language_confidences}")
+    return all(confidence > 0.5 for confidence in language_confidences)
 
 
 def is_not_similar_to_existing_instructions(
