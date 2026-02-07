@@ -220,17 +220,23 @@ def post_process_response(
         store_lsh_cache_to_disk=False,
         return_generator=True,
         similarity_threshold=0.8,  # The amount of overlap to count as a duplicate
+        verbose=False,
     )
     instruction_objects = [
         instruction_objects[mask["id"] - len(previous_instructions)]
-        for mask in deduper.deduplicate(
-            corpus=(
-                previous_instructions  #  type: ignore[bad-argument-type]
-                + [obj.instruction for obj in instruction_objects]
-            ),
-            overwrite=True,
+        for mask in tqdm(
+            iterable=deduper.deduplicate(
+                corpus=(
+                    previous_instructions  #  type: ignore[bad-argument-type]
+                    + [obj.instruction for obj in instruction_objects]
+                ),
+                overwrite=True,
+            )
+            or [],
+            desc="Removing duplicates",
+            leave=False,
+            total=len(instruction_objects),
         )
-        or []
         if mask["id"] >= len(previous_instructions) and not mask["duplicate"]
     ]
 
