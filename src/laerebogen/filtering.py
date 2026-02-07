@@ -24,7 +24,6 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
         not_too_long,
         does_not_contain_prompt_words,
         does_not_contain_banned_word,
-        does_not_start_with_write_a_program,
         does_not_start_with_punctuation,
         starts_with_danish_character,
         is_not_similar_to_existing_instructions,
@@ -133,19 +132,6 @@ def does_not_contain_banned_word(instruction_sample: InstructionSample) -> bool:
         )
         is None
     )
-
-
-def does_not_start_with_write_a_program(instruction_sample: InstructionSample) -> bool:
-    """Filter out instructions that starts with 'Skriv et program'.
-
-    Args:
-        instruction_sample:
-            The instruction sample to filter.
-
-    Returns:
-        True if the instruction should be kept, False if it should be filtered out.
-    """
-    return not instruction_sample.instruction.lower().startswith("skriv et program")
 
 
 def does_not_start_with_punctuation(instruction_sample: InstructionSample) -> bool:
