@@ -63,7 +63,7 @@ seed prompts can be found
 
 With the seed prompts in hand, we used the [Alpaca
 recipe](https://github.com/tatsu-lab/stanford_alpaca) to generate an initial instruction
-dataset with 52,000 examples, based on the
+dataset with 100,000 examples, based on the
 [Qwen/Qwen3-235B-A22B-Instruct-2507-FP8](https://hf.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8)
 decoder model. This used the seed prompts from the previous step as few-shot examples,
 and were filtered using filters that checked that the generated examples were not too
