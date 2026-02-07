@@ -134,10 +134,10 @@ class InstructionSample(BaseModel):
 
 
 class InstructionSamples(BaseModel):
-    """A list of 20 generated instructions."""
+    """A list of 10 generated instructions."""
 
     instructions: t.Annotated[
-        list[InstructionSample], Field(min_items=20, max_items=20)
+        list[InstructionSample], Field(min_items=10, max_items=10)
     ]
 
 
