@@ -1,4 +1,4 @@
-Din opgave er at skrive en liste med 10 opgaveinstruktioner samt et svar på hver af dem.
+Din opgave er at skrive en liste med opgaveinstruktioner samt et svar på hver af dem.
 
 Her er kravene:
 

@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 
 from pydantic import BaseModel, Field
 
+from .constants import NUM_PROMPT_INSTRUCTIONS
+
 
 @dataclass
 class Conversation:
@@ -134,10 +136,11 @@ class InstructionSample(BaseModel):
 
 
 class InstructionSamples(BaseModel):
-    """A list of 10 generated instructions."""
+    """A list of generated instructions."""
 
     instructions: t.Annotated[
-        list[InstructionSample], Field(min_items=10, max_items=10)
+        list[InstructionSample],
+        Field(min_items=NUM_PROMPT_INSTRUCTIONS, max_items=NUM_PROMPT_INSTRUCTIONS),
     ]
 
 
