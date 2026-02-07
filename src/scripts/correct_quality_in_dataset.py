@@ -70,7 +70,9 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
         instructions = [
-            InstructionSample.from_json(line.strip()) for line in f if line.strip()
+            InstructionSample.model_validate_json(line.strip())
+            for line in f
+            if line.strip()
         ]
 
     # Correct the dataset
@@ -84,7 +86,7 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
     )
     with corrected_path.open("w", encoding="utf-8") as f:
         for instruction in instructions:
-            f.write(instruction.json() + "\n")
+            f.write(instruction.model_dump_json() + "\n")
     logger.info(
         f"Saved {len(instructions):,} corrected instructions to "
         f"{corrected_path.resolve()!r}"

@@ -50,7 +50,7 @@ def correct_grammar_in_instructions(
         for instruction in instructions
     ]
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=prompt)],
             add_generation_prompt=True,
             tokenize=False,
@@ -91,7 +91,7 @@ def correct_grammar_in_instructions(
         for instruction in instructions
     ]
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=prompt)],
             add_generation_prompt=True,
             tokenize=False,
@@ -174,7 +174,7 @@ def correct_bad_quality_instructions(
         for instruction in instructions
     ]
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=prompt)],
             add_generation_prompt=True,
             tokenize=False,

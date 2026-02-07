@@ -67,7 +67,7 @@ class Conversation:
         if "messages" in conversation:
             return cls(messages=conversation["messages"])
         elif "instruction" in conversation:
-            instruction_sample = InstructionSample.from_json(json_str)
+            instruction_sample = InstructionSample.model_validate_json(json_str)
             return cls.from_instruction_sample(instruction_sample=instruction_sample)
         else:
             raise ValueError(

@@ -90,7 +90,7 @@ def evolve_instructions(
         for instruction in instructions
     ]
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=prompt)],
             add_generation_prompt=True,
             tokenize=False,
@@ -123,7 +123,7 @@ def evolve_instructions(
     # Get the corresponding outputs
     logger.info("Generating outputs for evolved instructions...")
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=instruction.instruction)],
             add_generation_prompt=True,
             tokenize=False,

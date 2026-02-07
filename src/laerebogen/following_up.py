@@ -50,7 +50,7 @@ def add_follow_up_to_conversations(
         for conversation in conversations
     ]
     prompts = [
-        tokenizer.apply_chat_template(
+        tokenizer.apply_chat_template(  # type: ignore[misc]
             [dict(role="user", content=prompt)],
             add_generation_prompt=True,
             tokenize=False,

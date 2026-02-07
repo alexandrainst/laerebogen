@@ -97,7 +97,9 @@ def main(
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
         instructions = [
-            InstructionSample.from_json(line.strip()) for line in f if line.strip()
+            InstructionSample.model_validate_json(line.strip())
+            for line in f
+            if line.strip()
         ]
 
     # Load the model

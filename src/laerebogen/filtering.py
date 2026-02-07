@@ -18,12 +18,7 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
     Returns:
         True if the instruction should be kept, False if it should be filtered out.
     """
-    all_filters = [
-        not_too_short,
-        not_too_long,
-        is_not_similar_to_existing_instructions,
-        does_not_contain_prompt_words,
-    ]
+    all_filters = [not_too_short, not_too_long, does_not_contain_prompt_words]
     for filter_fn in all_filters:
         if not filter_fn(instruction_sample):
             logger.debug(
@@ -60,24 +55,6 @@ def not_too_long(instruction_sample: InstructionSample) -> bool:
     """
     num_instruction_words = len(instruction_sample.instruction.split())
     return num_instruction_words < 300
-
-
-def is_not_similar_to_existing_instructions(
-    instruction_sample: InstructionSample,
-) -> bool:
-    """Filter out instructions that are too similar to existing instructions.
-
-    Args:
-        instruction_sample:
-            The instruction sample to filter.
-
-    Returns:
-        True if the instruction should be kept, False if it should be filtered out.
-    """
-    if not instruction_sample.most_similar_instructions:
-        return True
-    max_similarity = max(instruction_sample.most_similar_instructions.values())
-    return max_similarity < 0.7
 
 
 def does_not_contain_prompt_words(instruction_sample: InstructionSample) -> bool:
