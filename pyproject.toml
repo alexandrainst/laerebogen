@@ -7,7 +7,7 @@ authors = [
     {name = "Dan Saattrup Smart", email = "dan.smart@alexandra.dk"},
     {name = "Sofie Helene Bruun", email = "sofie.bruun@alexandra.dk"},
 ]
-requires-python = ">=3.11,<4.0"
+requires-python = ">=3.12,<4.0"
 dependencies = [
     "click>=8.2.1",
     "datasets>=3.4.1",
@@ -24,8 +24,9 @@ dependencies = [
     "trl>=0.20.0",
     "wandb>=0.21.0",
     "peft>=0.17.0",
-    "vllm>=0.9.1; platform_system == 'Linux'",
-    "unsloth>=2025.8.1; platform_system == 'Linux'",
+    "vllm>=0.14.1; platform_system == 'Linux'",
+    "vllm==0.11.0; platform_system == 'Darwin'",
+    "vllm-metal>=0.1.0; platform_system == 'Darwin'",
 ]
 
 [dependency-groups]
@@ -44,7 +45,7 @@ Issues = "https://github.com/alexandrainst/laerebogen/issues"
 file = "LICENSE"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py312"
 line-length = 88
 exclude = [
     ".git",
