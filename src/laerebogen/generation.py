@@ -221,8 +221,8 @@ def post_process_response(
         return_generator=True,
     )
     instruction_objects = [
-        instruction_objects[idx - len(previous_instructions)]
-        for idx, duplicate in tqdm(
+        instruction_objects[mask["id"] - len(previous_instructions)]
+        for mask in tqdm(
             deduper.deduplicate(
                 corpus=(
                     previous_instructions  #  type: ignore[bad-argument-type]
@@ -235,7 +235,7 @@ def post_process_response(
             leave=False,
             total=len(instruction_objects),
         )
-        if idx >= len(previous_instructions) and not duplicate
+        if mask["id"] >= len(previous_instructions) and not mask["duplicate"]
     ]
 
     return instruction_objects
