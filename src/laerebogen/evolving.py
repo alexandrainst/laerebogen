@@ -13,6 +13,7 @@ import typing as t
 from copy import deepcopy
 from pathlib import Path
 
+from pydantic import ValidationError
 from tqdm.auto import tqdm
 
 from laerebogen.data_models import EvolvedInstruction, EvolvedOutput
@@ -103,18 +104,23 @@ def evolve_instructions(
             leave=False,
         )
     ]
-    evolved_instructions = [
-        InstructionSample(
-            instruction=EvolvedInstruction.model_validate_json(
-                response.completion.strip()
-            ).new_prompt,
-            output="",
+    evolved_instructions: list[InstructionSample] = list()
+    for response in generate_text_with_vllm(
+        prompts=prompts, model=model, response_format=EvolvedInstruction
+    ):
+        if response.done_reason != "stop":
+            continue
+        try:
+            new_prompt = EvolvedInstruction.model_validate_json(
+                json_data=response.completion
+            ).new_prompt
+        except ValidationError:
+            logger.warning("Failed to parse the evolved instruction. Skipping it.")
+            continue
+
+        evolved_instructions.append(
+            InstructionSample(instruction=new_prompt, output="")
         )
-        for response in generate_text_with_vllm(
-            prompts=prompts, model=model, response_format=EvolvedInstruction
-        )
-        if response.done_reason == "stop"
-    ]
 
     # Get the corresponding outputs
     logger.info("Generating outputs for evolved instructions...")
@@ -136,9 +142,13 @@ def evolve_instructions(
     )
     for instruction, output in zip(evolved_instructions, responses):
         if output.done_reason == "stop":
-            instruction.output = EvolvedOutput.model_validate_json(
-                output.completion.strip()
-            ).new_output
+            try:
+                instruction.output = EvolvedOutput.model_validate_json(
+                    output.completion.strip()
+                ).new_output
+            except ValidationError:
+                logger.warning("Failed to parse the evolved output. Skipping it.")
+                continue
 
     # Filter the evolved instructions
     logger.info("Filtering evolved instructions...")

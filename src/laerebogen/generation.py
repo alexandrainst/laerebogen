@@ -16,6 +16,7 @@ from multiprocessing import Pool
 from pathlib import Path
 
 import numpy as np
+from pydantic import ValidationError
 from rouge_score import rouge_scorer
 from tqdm.auto import tqdm
 
@@ -227,16 +228,22 @@ def post_process_response(
             Number of CPUs to use for parallel processing of ROUGE scores.
 
     Returns:
-        A list of seed instructions extracted from the response.
+        A list of instructions extracted from the response.
     """
     # Copy previous_instructions and previous_instruction_tokens to avoid modifying the
     # original lists
     previous_instructions = deepcopy(previous_instructions)
     previous_instruction_tokens = deepcopy(previous_instruction_tokens)
 
-    raw_instructions = GeneratedInstructions.model_validate_json(
-        response.completion
-    ).instructions
+    try:
+        raw_instructions = GeneratedInstructions.model_validate_json(
+            response.completion
+        ).instructions
+    except ValidationError:
+        logger.warning(
+            "Failed to parse the response as a list of instructions. Skipping it."
+        )
+        return []
 
     instructions: list[InstructionSample] = []
     for idx, instruction_object in enumerate(raw_instructions, start=1):

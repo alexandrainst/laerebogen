@@ -12,4 +12,4 @@ Du opfører dig som en bruger, så du behøver ikke være høflig eller formel, 
 
 Du må kun skrive på dansk.
 
-Du skal outputte et JSON-objekt med nøglerne 'query' og 'output', hvor 'query' værdien er din nye prompt, og 'output' er svaret fra AI'en til den nye prompt.
+Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er din nye prompt, og 'output' er svaret fra AI'en til den nye prompt.

@@ -1,6 +1,5 @@
 """Correcting generated instructions."""
 
-import json
 import logging
 from copy import deepcopy
 from pathlib import Path
@@ -69,9 +68,15 @@ def correct_grammar_in_instructions(
         prompts=prompts, model=model, response_format=GrammarCorrectionResponse
     )
     for instruction, response in zip(corrected_instructions, responses):
-        response.completion = GrammarCorrectionResponse.model_validate_json(
-            response.completion
-        ).corrected_text
+        try:
+            response.completion = GrammarCorrectionResponse.model_validate_json(
+                response.completion
+            ).corrected_text
+        except ValidationError:
+            logger.warning(
+                "Failed to parse the grammar corrected instruction. Skipping it."
+            )
+            continue
         if response.done_reason == "stop":
             instruction.instruction = (
                 response.completion.strip()
@@ -104,9 +109,13 @@ def correct_grammar_in_instructions(
         prompts=prompts, model=model, response_format=GrammarCorrectionResponse
     )
     for instruction, response in zip(corrected_instructions, responses):
-        response.completion = GrammarCorrectionResponse.model_validate_json(
-            response.completion
-        ).corrected_text
+        try:
+            response.completion = GrammarCorrectionResponse.model_validate_json(
+                response.completion
+            ).corrected_text
+        except ValidationError:
+            logger.warning("Failed to parse the grammar corrected output. Skipping it.")
+            continue
         if response.done_reason == "stop":
             instruction.output = (
                 response.completion.strip()
@@ -189,7 +198,11 @@ def correct_bad_quality_instructions(
                 new_instruction = GeneratedInstruction.model_validate_json(
                     json_data=response.completion
                 )
-            except (json.JSONDecodeError, ValidationError):
+            except ValidationError:
+                logger.warning(
+                    "Failed to parse the bad quality corrected instruction. "
+                    "Skipping it."
+                )
                 continue
             instruction.instruction = new_instruction.instruction.strip()
             instruction.output = new_instruction.output.strip()

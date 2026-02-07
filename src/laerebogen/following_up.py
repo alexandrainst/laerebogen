@@ -1,13 +1,14 @@
 """Creating follow-up queries to conversations."""
 
-import json
 import logging
 import typing as t
 from copy import deepcopy
 from pathlib import Path
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from tqdm.auto import tqdm
+
+from laerebogen.data_models import GeneratedInstruction
 
 from .data_models import Conversation
 from .vllm_utils import generate_text_with_vllm
@@ -64,34 +65,18 @@ def add_follow_up_to_conversations(
         )
     ]
 
-    class ResponseFormat(BaseModel):
-        """Response format for the vLLM model."""
-
-        query: str
-        output: str
-
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=ResponseFormat
+        prompts=prompts, model=model, response_format=GeneratedInstruction
     )
     for conversation, response in zip(extended_conversations, responses):
         if response.done_reason == "stop":
             try:
-                new_query = ResponseFormat.model_validate_json(
+                new_query = GeneratedInstruction.model_validate_json(
                     json_data=response.completion
                 )
-            except (json.JSONDecodeError, ValidationError):
+            except ValidationError:
                 continue
-            conversation.add_message(
-                role="user",
-                content=new_query.query.strip()
-                if new_query.query.strip()
-                else "<empty>",
-            )
-            conversation.add_message(
-                role="assistant",
-                content=new_query.output.strip()
-                if new_query.output.strip()
-                else "<empty>",
-            )
+            conversation.add_message(role="user", content=new_query.instruction.strip())
+            conversation.add_message(role="assistant", content=new_query.output.strip())
 
     return extended_conversations
