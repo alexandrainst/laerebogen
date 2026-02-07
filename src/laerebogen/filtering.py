@@ -4,8 +4,6 @@ import logging
 import re
 import string
 
-from lingua import Language, LanguageDetectorBuilder
-
 from .data_models import InstructionSample
 
 logger = logging.getLogger(__name__)
@@ -29,7 +27,6 @@ def keep_instruction(instruction_sample: InstructionSample) -> bool:
         does_not_start_with_write_a_program,
         does_not_start_with_punctuation,
         starts_with_danish_character,
-        is_danish,
         is_not_similar_to_existing_instructions,
     ]
     for filter_fn in all_filters:
@@ -177,31 +174,6 @@ def starts_with_danish_character(instruction_sample: InstructionSample) -> bool:
     return instruction_sample.instruction[
         0
     ].isascii() or instruction_sample.instruction.lower().startswith(tuple("æøå"))
-
-
-def is_danish(instruction_sample: InstructionSample) -> bool:
-    """Filter out instructions that are not in Danish.
-
-    Args:
-        instruction_sample:
-            The instruction sample to filter.
-
-    Returns:
-        True if the instruction should be kept, False if it should be filtered out.
-    """
-    texts_that_need_detection = [
-        instruction_sample.instruction,
-        instruction_sample.output,
-    ]
-    if instruction_sample.input and instruction_sample.input != "<empty>":
-        texts_that_need_detection.append(instruction_sample.input)
-
-    detector = LanguageDetectorBuilder.from_all_languages().build()
-    language_confidences = [
-        detector.compute_language_confidence(text=text, language=Language.DANISH)
-        for text in texts_that_need_detection
-    ]
-    return all(confidence > 0.7 for confidence in language_confidences)
 
 
 def is_not_similar_to_existing_instructions(
