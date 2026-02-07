@@ -86,12 +86,7 @@ class Conversation:
             An instance of Conversation with the instruction and output as messages.
         """
         conversation = cls()
-        conversation.add_message(
-            role="user",
-            content=f"{instruction_sample.instruction}\n\n{instruction_sample.input}"
-            if instruction_sample.input
-            else instruction_sample.instruction,
-        )
+        conversation.add_message(role="user", content=instruction_sample.instruction)
         conversation.add_message(role="assistant", content=instruction_sample.output)
         return conversation
 
@@ -114,8 +109,6 @@ class InstructionSample:
     Attributes:
         instruction:
             The instruction to be followed by the model.
-        input:
-            The input to the instruction - can be empty.
         output:
             The expected output of the instruction.
         most_similar_instructions:
@@ -128,7 +121,6 @@ class InstructionSample:
     """
 
     instruction: str
-    input: str
     output: str
     most_similar_instructions: dict[str, float] = field(default_factory=dict)
     avg_similarity_score: float = float("nan")
@@ -143,7 +135,6 @@ class InstructionSample:
         return json.dumps(
             dict(
                 instruction=self.instruction,
-                input=self.input,
                 output=self.output,
                 most_similar_instructions=self.most_similar_instructions,
                 avg_similarity_score=self.avg_similarity_score,
@@ -172,7 +163,6 @@ class InstructionSample:
             raise ValueError(f"Invalid JSON string: {json_str!r}") from e
         return cls(
             instruction=data["instruction"],
-            input=data["input"],
             output=data["output"],
             most_similar_instructions=data.get("most_similar_instructions", {}),
             avg_similarity_score=data.get("avg_similarity_score", float("nan")),
@@ -194,7 +184,32 @@ class Response:
     done_reason: str | None
 
 
+class GeneratedInstruction(BaseModel):
+    """A generated instruction."""
+
+    instruction: str
+    output: str
+
+
+class GeneratedInstructions(BaseModel):
+    """A list of generated instructions."""
+
+    instructions: list[GeneratedInstruction]
+
+
 class GrammarCorrectionResponse(BaseModel):
     """A response from the grammar correction model."""
 
-    corrected_instruction: str
+    corrected_text: str
+
+
+class EvolvedInstruction(BaseModel):
+    """An evolved instruction."""
+
+    new_prompt: str
+
+
+class EvolvedOutput(BaseModel):
+    """An evolved output."""
+
+    new_output: str

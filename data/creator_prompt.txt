@@ -1,16 +1,17 @@
-Jeg vil have dig til at fungere som prompt-skaber.
+Du er en erfaren prompt-skaber.
 
-Dit mål er at lade dig inspirere af #Original Prompt# til at skabe en helt ny prompt.
+Dit mål er at lade dig inspirere af den nedenstående originale prompt til at skabe en helt ny prompt.
 
-Denne nye prompt skal tilhøre samme domæne som #Original Prompt#, men være endnu mere sjælden.
+<original_prompt>
+{instruction}
+</original_prompt>
 
-Længden og sværhedsgraden af #Skabt Prompt# skal være den samme som for #Original Prompt#.
+Denne nye prompt skal tilhøre samme domæne som den originale prompt, men være endnu mere sjælden.
 
-#Skabt Prompt# skal være rimelig og skal kunne forstås og besvares af mennesker. '#Original Prompt#', '#Skabt Prompt#', 'original prompt' og 'skabt prompt' må ikke optræde i #Skabt Prompt#.
+Længden og sværhedsgraden af den nye prompt skal være den samme som den originale prompt.
+
+Den nye prompt skal være rimelig og skal kunne forstås og besvares af mennesker.
 
 Du må kun skrive på dansk.
 
-#Original Prompt#:
-{instruction}
-
-#Skabt Prompt#:
+Du skal outputte en JSON objekt med nøglen 'new_prompt' og værdien som den nye prompt.

@@ -15,6 +15,8 @@ from pathlib import Path
 
 from tqdm.auto import tqdm
 
+from laerebogen.data_models import EvolvedInstruction, EvolvedOutput
+
 from .data_models import InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm
@@ -26,9 +28,9 @@ logger = logging.getLogger(__name__)
 
 
 METHODS = dict(
-    add_constraints="Tilføj venligst endnu en begrænsning/et krav til "
-    "#Original Prompt#.",
-    deepen="Hvis #Original Prompt# indeholder forespørgsler om bestemte emner, kan "
+    add_constraints="Tilføj venligst endnu en begrænsning eller krav til "
+    "instruktionen.",
+    deepen="Hvis instruktionen indeholder forespørgsler om bestemte emner, kan "
     "dybden og bredden af forespørgslen øges.",
     concretise="Erstat venligst generelle begreber med mere specifikke begreber.",
     increase_reasoning_steps="Hvis #Original Prompt# kan løses med blot et par enkle "
@@ -85,7 +87,7 @@ def evolve_instructions(
     prompts = [
         random.choice(templates)
         .replace("{format}", random.choice(FORMATS))
-        .format(instruction=f"{instruction.instruction}\n\n{instruction.input}")
+        .format(instruction=instruction.instruction)
         for instruction in instructions
     ]
     prompts = [
@@ -102,8 +104,15 @@ def evolve_instructions(
         )
     ]
     evolved_instructions = [
-        InstructionSample(instruction=response.completion.strip(), input="", output="")
-        for response in generate_text_with_vllm(prompts=prompts, model=model)
+        InstructionSample(
+            instruction=EvolvedInstruction.model_validate_json(
+                response.completion.strip()
+            ).new_prompt,
+            output="",
+        )
+        for response in generate_text_with_vllm(
+            prompts=prompts, model=model, response_format=EvolvedInstruction
+        )
         if response.done_reason == "stop"
     ]
 
@@ -122,10 +131,14 @@ def evolve_instructions(
             leave=False,
         )
     ]
-    responses = generate_text_with_vllm(prompts=prompts, model=model)
+    responses = generate_text_with_vllm(
+        prompts=prompts, model=model, response_format=EvolvedOutput
+    )
     for instruction, output in zip(evolved_instructions, responses):
         if output.done_reason == "stop":
-            instruction.output = output.completion.strip()
+            instruction.output = EvolvedOutput.model_validate_json(
+                output.completion.strip()
+            ).new_output
 
     # Filter the evolved instructions
     logger.info("Filtering evolved instructions...")

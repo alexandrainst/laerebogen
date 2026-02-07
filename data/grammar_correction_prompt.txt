@@ -1,15 +1,15 @@
-Jeg vil have dig til at fungere som en professionel korrekturlæser.
+Du er en professionel dansk korrekturlæser.
 
 Skriv følgende tekst om, hvor du retter all stavefejl og grammatiske fejl, uden at ændre
 betydningen af teksten.
 
-Du må kun skrive på dansk.
-
-Hvis teksten er '<empty>', så skal du også bare skrive '<empty>'.
-
-Du skal outputte et JSON objekt med nøglen 'corrected_instruction' og værdien som
-den rettede tekst.
-
 <tekst>
 {text}
 </tekst>
+
+Du må kun skrive på dansk.
+
+Hvis teksten er tom, så skal du også bare outputte en tom tekststreng.
+
+Du skal outputte et JSON objekt med nøglen 'corrected_text' og værdien som den rettede
+tekst.

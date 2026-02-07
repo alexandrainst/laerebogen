@@ -5,8 +5,10 @@ import logging
 from copy import deepcopy
 from pathlib import Path
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 from tqdm.auto import tqdm
+
+from laerebogen.data_models import GeneratedInstruction
 
 from .data_models import GrammarCorrectionResponse, InstructionSample
 from .filtering import keep_instruction
@@ -47,9 +49,7 @@ def correct_grammar_in_instructions(
     # Correct the instructions
     logger.info("Correcting grammar in instructions...")
     prompts = [
-        correction_prompt.format(
-            text=instruction.instruction if instruction.instruction else "<empty>"
-        )
+        correction_prompt.format(text=instruction.instruction)
         for instruction in instructions
     ]
     prompts = [
@@ -71,39 +71,9 @@ def correct_grammar_in_instructions(
     for instruction, response in zip(corrected_instructions, responses):
         response.completion = GrammarCorrectionResponse.model_validate_json(
             response.completion
-        ).corrected_instruction
+        ).corrected_text
         if response.done_reason == "stop":
             instruction.instruction = (
-                response.completion.strip()
-                if response.completion.strip() != "<empty>"
-                else ""
-            )
-
-    # Correct the inputs
-    logger.info("Correcting grammar in inputs...")
-    prompts = [
-        correction_prompt.format(
-            text=instruction.input if instruction.input else "<empty>"
-        )
-        for instruction in instructions
-    ]
-    prompts = [
-        tokenizer.apply_chat_template(
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
-    responses = generate_text_with_vllm(prompts=prompts, model=model)
-    for instruction, response in zip(corrected_instructions, responses):
-        if response.done_reason == "stop":
-            instruction.input = (
                 response.completion.strip()
                 if response.completion.strip() != "<empty>"
                 else ""
@@ -130,8 +100,13 @@ def correct_grammar_in_instructions(
             leave=False,
         )
     ]
-    responses = generate_text_with_vllm(prompts=prompts, model=model)
+    responses = generate_text_with_vllm(
+        prompts=prompts, model=model, response_format=GrammarCorrectionResponse
+    )
     for instruction, response in zip(corrected_instructions, responses):
+        response.completion = GrammarCorrectionResponse.model_validate_json(
+            response.completion
+        ).corrected_text
         if response.done_reason == "stop":
             instruction.output = (
                 response.completion.strip()
@@ -205,26 +180,18 @@ def correct_bad_quality_instructions(
         )
     ]
 
-    class ResponseFormat(BaseModel):
-        """Response format for the vLLM model."""
-
-        instruction: str
-        input: str
-        output: str
-
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=ResponseFormat
+        prompts=prompts, model=model, response_format=GeneratedInstruction
     )
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":
             try:
-                new_instruction = ResponseFormat.model_validate_json(
+                new_instruction = GeneratedInstruction.model_validate_json(
                     json_data=response.completion
                 )
             except (json.JSONDecodeError, ValidationError):
                 continue
             instruction.instruction = new_instruction.instruction.strip()
-            instruction.input = new_instruction.input.strip()
             instruction.output = new_instruction.output.strip()
 
     # Filter the corrected instructions

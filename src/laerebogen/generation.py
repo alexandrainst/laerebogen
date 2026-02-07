@@ -1,7 +1,7 @@
 """Generation of the instruction-following data using a language model.
 
 This is the method described in [1], based on [2], and uses seed tasks to generate new
-instructions using a base decoder model.
+instructions using a decoder model.
 
 [1]: https://github.com/tatsu-lab/stanford_alpaca
 [2]: https://doi.org/10.18653/v1/2023.acl-long.754
@@ -10,7 +10,6 @@ instructions using a base decoder model.
 import json
 import logging
 import random
-import re
 from copy import deepcopy
 from functools import partial
 from multiprocessing import Pool
@@ -19,6 +18,8 @@ from pathlib import Path
 import numpy as np
 from rouge_score import rouge_scorer
 from tqdm.auto import tqdm
+
+from laerebogen.data_models import GeneratedInstructions
 
 from .data_models import InstructionSample, Response
 from .filtering import keep_instruction
@@ -57,8 +58,7 @@ def generate_instruction_following_data(
         num_instructions_to_generate:
             Number of instructions to generate.
         model_id:
-            The model ID of the model to use for generation. Must be a base model, not a
-            finetuned one.
+            The model ID of the model to use for generation.
         num_prompt_instructions:
             Number of instructions to use as prompts for each generated instruction.
         batch_size:
@@ -78,8 +78,7 @@ def generate_instruction_following_data(
         seed_tasks = [json.loads(line) for line in f.readlines() if line.strip()]
     seed_instruction_data = [
         InstructionSample(
-            instruction=t["instruction"],
-            input=t["instances"][0]["input"],
+            instruction=t["instruction"] + "\n\n" + t["instances"][0]["input"],
             output=t["instances"][0]["output"],
         )
         for t in seed_tasks
@@ -135,7 +134,9 @@ def generate_instruction_following_data(
             batch_inputs.append(encoded_prompt)
 
         # Generate new instructions with the LLM
-        responses = generate_text_with_vllm(prompts=batch_inputs, model=model)
+        responses = generate_text_with_vllm(
+            prompts=batch_inputs, model=model, response_format=GeneratedInstructions
+        )
 
         # Process the generated instructions
         instruction_data: list[InstructionSample] = []
@@ -143,7 +144,6 @@ def generate_instruction_following_data(
             iterable=responses, desc="Processing responses", leave=False
         ):
             new_instructions = post_process_response(
-                num_prompt_instructions=num_prompt_instructions,
                 response=response,
                 scorer=scorer,
                 previous_instructions=all_instructions,
@@ -190,21 +190,15 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
     Returns:
         A string containing the encoded prompt.
     """
-    encoded_prompt = deepcopy(prompt) + "\n"
-    idx = 0
+    encoded_prompt = deepcopy(prompt).strip() + "\n"
     for idx, seed in enumerate(seed_instructions, start=1):
-        instruction = re.sub(r"\s+", " ", seed.instruction).strip().rstrip(":")
-        input = "<noinput>" if seed.input.lower() == "" else seed.input
-        encoded_prompt += "###\n"
-        encoded_prompt += f"{idx}. Instruktion:\n{instruction}\n"
-        encoded_prompt += f"{idx}. Input:\n{input}\n"
-        encoded_prompt += f"{idx}. Output:\n{seed.output}\n"
-    encoded_prompt += f"###\n{idx + 1}. Instruktion:\n"
+        encoded_prompt += json.dumps(
+            dict(instruction=seed.instruction, output=seed.output)
+        )
     return encoded_prompt
 
 
 def post_process_response(
-    num_prompt_instructions: int,
     response: Response,
     scorer: rouge_scorer.RougeScorer,
     previous_instructions: list[str],
@@ -214,8 +208,6 @@ def post_process_response(
     """Post-process the response from the model to extract instructions.
 
     Args:
-        num_prompt_instructions:
-            Number of prompt instructions used in the request.
         response:
             The response from the model.
         scorer:
@@ -235,13 +227,12 @@ def post_process_response(
     previous_instructions = deepcopy(previous_instructions)
     previous_instruction_tokens = deepcopy(previous_instruction_tokens)
 
-    raw_instructions = re.split(
-        pattern=r"###",
-        string=f"{num_prompt_instructions + 1}. Instruktion:" + response.completion,
-    )
-    instructions = []
+    raw_instructions = GeneratedInstructions.model_validate_json(
+        response.completion
+    ).instructions
 
-    for idx, inst in enumerate(raw_instructions, start=1):
+    instructions: list[InstructionSample] = []
+    for idx, instruction_object in enumerate(raw_instructions, start=1):
         # If the decoding stops due to length, the last example is likely truncated so
         # we discard it
         if idx == len(raw_instructions) and response.done_reason == "length":
@@ -250,26 +241,12 @@ def post_process_response(
             )
             continue
 
-        # If the data does not contain the expected format, we skip it
-        splitted_data = re.split(
-            pattern=rf"{idx + num_prompt_instructions}\.\s+(Instruktion|Input|Output):",
-            string=inst,
-        )
-        if len(splitted_data) != 7:
-            logger.debug(
-                f"Skipping instruction {idx} due to unexpected format:\n{inst.strip()}"
-            )
-            continue
+        # Extract instruction and output
+        instruction = instruction_object.instruction.strip()
+        output = instruction_object.output.strip()
 
-        # Extract instruction, input, and output
-        inst = splitted_data[2].strip()
-        input = splitted_data[4].strip()
-        input = "" if input.lower() == "<noinput>" else input
-        output = splitted_data[6].strip()
-
-        # Compute the similarity of the new instruction to all existing
-        # instructions
-        new_instruction_tokens = scorer._tokenizer.tokenize(text=inst)
+        # Compute the similarity of the new instruction to all existing instructions
+        new_instruction_tokens = scorer._tokenizer.tokenize(text=instruction)
         with Pool(processes=num_cpus) as p:
             rouge_scores = p.map(
                 partial(rouge_scorer._score_lcs, new_instruction_tokens),
@@ -283,13 +260,12 @@ def post_process_response(
 
         # Add the new instruction and its tokens to the previous lists, so that future
         # instructions can be compared to it
-        previous_instructions.append(inst)
+        previous_instructions.append(instruction)
         previous_instruction_tokens.append(new_instruction_tokens)
 
         # Store the instruction
         new_instruction = InstructionSample(
-            instruction=inst,
-            input=input,
+            instruction=instruction,
             output=output,
             most_similar_instructions=most_similar_instructions,
             avg_similarity_score=float(np.mean(rouge_scores)),
