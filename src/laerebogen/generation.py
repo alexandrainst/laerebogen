@@ -150,7 +150,7 @@ def generate_instruction_following_data(
             # Store the generated instructions to disk
             with output_path.open("a") as f:
                 json_records = "\n".join(
-                    instruction.json() for instruction in instruction_data
+                    instruction.model_dump_json() for instruction in instruction_data
                 )
                 f.write(json_records + "\n")
 
@@ -208,7 +208,8 @@ def post_process_response(
         ).instructions
     except ValidationError:
         logger.warning(
-            "Failed to parse the response as a list of instructions. Skipping it."
+            "Failed to parse the response as a list of instructions. Skipping it. The "
+            f"response was: {response.completion}"
         )
         return []
 
