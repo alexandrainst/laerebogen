@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from tqdm.auto import tqdm
 from vllm.sampling_params import GuidedDecodingParams
 
-from .constants import MAX_CONTEXT_LENGTH, STOP_TOKENS, TEMPERATURE
+from .constants import MAX_CONTEXT_LENGTH, TEMPERATURE
 from .data_models import Response
 
 if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
@@ -40,7 +40,6 @@ def generate_text_with_vllm(
         A list of responses.
     """
     sampling_params = SamplingParams(
-        stop=STOP_TOKENS,
         temperature=TEMPERATURE,
         max_tokens=MAX_CONTEXT_LENGTH,
         guided_decoding=GuidedDecodingParams(json=response_format.model_json_schema())
