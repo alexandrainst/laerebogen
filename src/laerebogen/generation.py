@@ -10,14 +10,13 @@ instructions using a decoder model.
 import json
 import logging
 import random
-from copy import deepcopy
 from pathlib import Path
 
 from nlp_dedup import Deduper
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from .data_models import InstructionSample, InstructionSamples, Response
+from .data_models import InstructionSample, InstructionSamples
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
@@ -112,12 +111,18 @@ def generate_instruction_following_data(
         # based on
         batch_inputs = []
         for _ in range(batch_size):
-            seed_instructions = random.sample(
-                population=seed_instruction_data, k=num_prompt_instructions
-            )
-            encoded_prompt = encode_prompt(
-                seed_instructions=seed_instructions, prompt=generation_prompt
-            )
+            encoded_prompt = generation_prompt.format(
+                seed_instructions="\n".join(
+                    [
+                        json.dumps(
+                            dict(instruction=seed.instruction, output=seed.output)
+                        )
+                        for seed in random.sample(
+                            population=seed_instruction_data, k=num_prompt_instructions
+                        )
+                    ]
+                )
+            ).strip()
             batch_inputs.append(encoded_prompt)
 
         # Generate new instructions with the LLM
@@ -125,17 +130,55 @@ def generate_instruction_following_data(
             prompts=batch_inputs, model=model, response_format=InstructionSamples
         )
 
-        # Process the generated instructions
+        # Extract and filter the generated instructions
         instruction_data: list[InstructionSample] = []
         for response in tqdm(
             iterable=responses, desc="Processing responses", leave=False
         ):
-            new_instructions = post_process_response(
-                response=response, previous_instructions=all_instructions
+            try:
+                new_instructions = InstructionSamples.model_validate_json(
+                    response.completion
+                ).instructions
+            except ValidationError:
+                logger.warning(
+                    "Failed to parse the response as a list of instructions. Skipping "
+                    f"it. The response was: {response.completion}"
+                )
+            instruction_data.extend(
+                [
+                    instruction
+                    for instruction in new_instructions
+                    if keep_instruction(instruction_sample=instruction)
+                ]
             )
-            for instruction in new_instructions:
-                if keep_instruction(instruction_sample=instruction):
-                    instruction_data.append(instruction)
+
+        # Remove duplicates
+        deduper = Deduper(
+            store_mask_to_disk=False,
+            store_config_to_disk=False,
+            store_corpus_to_disk=False,
+            store_lsh_cache_to_disk=False,
+            return_generator=True,
+            similarity_threshold=0.8,  # The amount of overlap to count as a duplicate
+            verbose=False,
+        )
+        instruction_data = [
+            instruction_data[mask["id"] - len(all_instructions)]
+            for mask in tqdm(
+                iterable=deduper.deduplicate(
+                    corpus=(
+                        all_instructions  # type: ignore[bad-argument-type]
+                        + [obj.instruction for obj in instruction_data]
+                    ),
+                    overwrite=True,
+                )
+                or [],
+                desc="Removing duplicates",
+                leave=False,
+                total=len(instruction_data),
+            )
+            if mask["id"] >= len(all_instructions) and not mask["duplicate"]
+        ]
 
         if instruction_data:
             # Update the existing intermediate data
@@ -154,91 +197,4 @@ def generate_instruction_following_data(
                 )
                 f.write(json_records + "\n")
 
-    # Close the progress bar
     progress_bar.close()
-
-
-def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> str:
-    """Encode multiple prompt instructions into a single string.
-
-    Args:
-        seed_instructions:
-            A list of seed instructions to encode into the prompt.
-        prompt:
-            The initial prompt text to which the seed instructions will be appended.
-
-    Returns:
-        A string containing the encoded prompt.
-    """
-    encoded_prompt = (
-        deepcopy(prompt)
-        .strip()
-        .format(
-            seed_instructions="\n".join(
-                [
-                    json.dumps(dict(instruction=seed.instruction, output=seed.output))
-                    for seed in seed_instructions
-                ]
-            )
-        )
-    )
-    return encoded_prompt.strip()
-
-
-def post_process_response(
-    response: Response, previous_instructions: list[str]
-) -> list[InstructionSample]:
-    """Post-process the response from the model to extract instructions.
-
-    Args:
-        response:
-            The response from the model.
-        previous_instructions:
-            A list of all previously generated instructions.
-
-    Returns:
-        A list of instructions extracted from the response.
-    """
-    # Copy previous_instructions to avoid modifying the original lists
-    previous_instructions = deepcopy(previous_instructions)
-
-    try:
-        instruction_objects = InstructionSamples.model_validate_json(
-            response.completion
-        ).instructions
-    except ValidationError:
-        logger.warning(
-            "Failed to parse the response as a list of instructions. Skipping it. The "
-            f"response was: {response.completion}"
-        )
-        return []
-
-    # Remove duplicates
-    deduper = Deduper(
-        store_mask_to_disk=False,
-        store_config_to_disk=False,
-        store_corpus_to_disk=False,
-        store_lsh_cache_to_disk=False,
-        return_generator=True,
-        similarity_threshold=0.8,  # The amount of overlap to count as a duplicate
-        verbose=False,
-    )
-    instruction_objects = [
-        instruction_objects[mask["id"] - len(previous_instructions)]
-        for mask in tqdm(
-            iterable=deduper.deduplicate(
-                corpus=(
-                    previous_instructions  #  type: ignore[bad-argument-type]
-                    + [obj.instruction for obj in instruction_objects]
-                ),
-                overwrite=True,
-            )
-            or [],
-            desc="Removing duplicates",
-            leave=False,
-            total=len(instruction_objects),
-        )
-        if mask["id"] >= len(previous_instructions) and not mask["duplicate"]
-    ]
-
-    return instruction_objects
