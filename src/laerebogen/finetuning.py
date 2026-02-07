@@ -160,19 +160,19 @@ def finetune_model(
 
     logger.info("Loading the dataset...")
     dataset = load_dataset(
-        path=dataset_id,
-        split="train",
-        token=os.getenv("HUGGINGFACE_API_KEY", True),
+        path=dataset_id, split="train", token=os.getenv("HUGGINGFACE_API_KEY", True)
     )
     assert isinstance(dataset, Dataset)
 
     # Remove empty samples
     dataset = dataset.filter(
-        function=lambda x: len(x["messages"]) > 0
-        and all(
-            len(message["content"]) > 0
-            for message in x["messages"]
-            if message["role"] in {"user", "assistant"}
+        function=lambda x: (
+            len(x["messages"]) > 0
+            and all(
+                len(message["content"]) > 0
+                for message in x["messages"]
+                if message["role"] in {"user", "assistant"}
+            )
         ),
         desc="Filtering empty samples",
     )

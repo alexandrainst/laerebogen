@@ -45,7 +45,7 @@ logger = logging.getLogger("push_to_hub")
 )
 def main(dataset: list[str], new_dataset: str, public: bool) -> None:
     """Merge multiple finetuning datasets into one and push to the Hugging Face Hub."""
-    # Ensure that there are at least two datasets
+    # Ensure that there are at least two datasets
     if len(dataset) < 2:
         raise ValueError("You need to specify at least two datasets to merge.")
 
