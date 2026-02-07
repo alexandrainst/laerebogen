@@ -5,9 +5,11 @@ Her er kravene:
 1. Prøv ikke at gentage verbet for hver instruktion for at gøre dem så forskellige som muligt.
 2. Sprogbruget i instruktionerne skal være forskelligt. Du bør f.eks. kombinere spørgsmål med bydende instruktioner.
 3. Typen af instruktioner skal være forskellige. Listen bør indeholde forskellige typer opgaver såsom åben generering, klassificering, redigering osv.
-4. En sprogmodel skal kunne gennemføre instruktionen. Bed f.eks. ikke assistenten om at oprette noget visuelt eller et lydoutput. Som et andet eksempel, bed ikke assistenten om at vække dig kl. 17 eller indstille en påmindelse, fordi den ikke kan udføre nogen handling.
-5. Instruktionerne skal være på dansk.
-6. Instruktionerne skal være 1 til 5 sætninger lange. Enten en bydende sætning eller et spørgsmål er tilladt.
-7. Outputtet skal være et passende svar på instruktionen. Sørg for, at outputtet er mindre end 100 ord.
-8. Undgå at bruge ordet "Instruktion" i selve instruktionen.
-9. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 20 JSON objekter med nøglerne "instruction" og "output".
+4. Du skal både skrive instruktioner, som henvender sig til eksperter og instruktioner, som henvender sig til folk, der ikke er eksperter
+5. Instruktionerne skal omhandle så forskellige domæner som muligt.
+6. En sprogmodel skal kunne gennemføre instruktionen. Bed f.eks. ikke assistenten om at oprette noget visuelt eller et lydoutput. Som et andet eksempel, bed ikke assistenten om at vække dig kl. 17 eller indstille en påmindelse, fordi den ikke kan udføre nogen handling.
+7. Instruktionerne skal være på dansk.
+8. Instruktionerne skal være 1 til 5 sætninger lange. Enten en bydende sætning eller et spørgsmål er tilladt.
+9. Outputtet skal være et passende svar på instruktionen. Sørg for, at outputtet er mindre end 300 ord.
+10. Undgå at bruge ordet "Instruktion" i selve instruktionen.
+11. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 20 JSON objekter med nøglerne "instruction" og "output".
