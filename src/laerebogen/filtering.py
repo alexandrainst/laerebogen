@@ -193,7 +193,7 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
         instruction_sample.instruction,
         instruction_sample.output,
     ]
-    if instruction_sample.input:
+    if instruction_sample.input and instruction_sample.input != "<empty>":
         texts_that_need_detection.append(instruction_sample.input)
 
     detector = LanguageDetectorBuilder.from_languages(
@@ -203,11 +203,7 @@ def is_danish(instruction_sample: InstructionSample) -> bool:
         detector.compute_language_confidence(text=text, language=Language.DANISH)
         for text in texts_that_need_detection
     ]
-    logger.info(
-        "Language confidences: "
-        f"{list(zip(texts_that_need_detection, language_confidences))}"
-    )
-    return all(confidence > 0.5 for confidence in language_confidences)
+    return all(confidence > 0.7 for confidence in language_confidences)
 
 
 def is_not_similar_to_existing_instructions(
