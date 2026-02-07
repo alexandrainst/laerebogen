@@ -190,12 +190,19 @@ def encode_prompt(seed_instructions: list[InstructionSample], prompt: str) -> st
     Returns:
         A string containing the encoded prompt.
     """
-    encoded_prompt = deepcopy(prompt).strip() + "\n"
-    for idx, seed in enumerate(seed_instructions, start=1):
-        encoded_prompt += json.dumps(
-            dict(instruction=seed.instruction, output=seed.output)
+    encoded_prompt = (
+        deepcopy(prompt)
+        .strip()
+        .format(
+            seed_instructions="\n".join(
+                [
+                    json.dumps(dict(instruction=seed.instruction, output=seed.output))
+                    for seed in seed_instructions
+                ]
+            )
         )
-    return encoded_prompt
+    )
+    return encoded_prompt.strip()
 
 
 def post_process_response(

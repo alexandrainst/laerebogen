@@ -13,3 +13,9 @@ Her er kravene:
 9. Outputtet skal være et passende svar på instruktionen. Sørg for, at outputtet er mindre end 300 ord.
 10. Undgå at bruge ordet "Instruktion" i selve instruktionen.
 11. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 20 JSON objekter med nøglerne "instruction" og "output".
+
+Her er nogle eksempler på instruktioner, som du kan bruge som inspiration:
+
+<example_instructions>
+{seed_instructions}
+</example_instructions>
