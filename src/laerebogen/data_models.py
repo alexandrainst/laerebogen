@@ -189,8 +189,8 @@ class Response:
 class GeneratedInstruction(BaseModel):
     """A generated instruction."""
 
-    instruction: str
-    output: str
+    instruction: t.Annotated[str, Field(min_length=1)]
+    output: t.Annotated[str, Field(min_length=1)]
 
 
 class GeneratedInstructions(BaseModel):
@@ -204,16 +204,16 @@ class GeneratedInstructions(BaseModel):
 class GrammarCorrectionResponse(BaseModel):
     """A response from the grammar correction model."""
 
-    corrected_text: str
+    corrected_text: t.Annotated[str, Field(min_length=1)]
 
 
 class EvolvedInstruction(BaseModel):
     """An evolved instruction."""
 
-    new_prompt: str
+    new_prompt: t.Annotated[str, Field(min_length=1)]
 
 
 class EvolvedOutput(BaseModel):
     """An evolved output."""
 
-    new_output: str
+    new_output: t.Annotated[str, Field(min_length=1)]
