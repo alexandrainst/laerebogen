@@ -221,11 +221,24 @@ def post_process_response(
             yield instruction_object.instruction
 
     # Remove duplicates
-    deduper = Deduper(return_generator=True)
+    deduper = Deduper(
+        store_mask_to_disk=False,
+        store_config_to_disk=False,
+        store_corpus_to_disk=False,
+        store_lsh_cache_to_disk=False,
+        return_generator=True,
+    )
     unique_new_instructions = [
         instruction
         for instruction in tqdm(
-            deduper.deduplicate(corpus=corpus()) or [],
+            deduper.deduplicate(
+                corpus=(
+                    previous_instructions  #  type: ignore[bad-argument-type]
+                    + [obj.instruction for obj in instruction_objects]
+                ),
+                overwrite=True,
+            )
+            or [],
             desc="Removing duplicates",
             leave=False,
             total=len(instruction_objects),
