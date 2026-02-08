@@ -23,7 +23,10 @@ logger = logging.getLogger(__name__)
 
 
 def generate_text_with_vllm(
-    prompts: list, model: "LLM", response_format: t.Type[BaseModel] | None = None
+    prompts: list,
+    model: "LLM",
+    apply_chat_template: bool,
+    response_format: t.Type[BaseModel] | None = None,
 ) -> list[Response]:
     """Decode with vLLM.
 
@@ -32,6 +35,9 @@ def generate_text_with_vllm(
             A list of strings to complete.
         model:
             The vLLM model.
+        apply_chat_template:
+            Whether to apply the chat template to the prompts, which is recommended if
+            the model is an instruction-tuned model.
         response_format (optional):
             A Pydantic model to force the response format of the completions. If None,
             then no formatting is applied. Defaults to None.
@@ -47,6 +53,22 @@ def generate_text_with_vllm(
         raise TypeError(
             "All prompts must be strings. Got the types {set(map(type, prompts)).}"
         )
+
+    if apply_chat_template:
+        tokenizer = model.get_tokenizer()
+        prompts = [
+            tokenizer.apply_chat_template(  # type: ignore[misc]
+                [dict(role="user", content=prompt)],
+                add_generation_prompt=True,
+                tokenize=False,
+            )
+            for prompt in tqdm(
+                iterable=prompts,
+                desc="Applying chat template to prompts",
+                unit="prompt",
+                leave=False,
+            )
+        ]
 
     sampling_params = SamplingParams(
         temperature=TEMPERATURE,

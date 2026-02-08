@@ -6,7 +6,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from pydantic import ValidationError
-from tqdm.auto import tqdm
 
 from .data_models import Conversation, InstructionSample
 from .vllm_utils import generate_text_with_vllm
@@ -34,9 +33,6 @@ def add_follow_up_to_conversations(
     Returns:
         The conversations with added follow-up queries.
     """
-    # Load the tokenizer
-    tokenizer = model.get_tokenizer()
-
     # Load the prompt
     with Path(prompt_path).open() as f:
         follow_up_prompt = f.read() + "\n"
@@ -49,22 +45,11 @@ def add_follow_up_to_conversations(
         follow_up_prompt.format(conversation=str(conversation))
         for conversation in conversations
     ]
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
-
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=InstructionSample
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=InstructionSample,
     )
     for conversation, response in zip(extended_conversations, responses):
         if response.done_reason == "stop":

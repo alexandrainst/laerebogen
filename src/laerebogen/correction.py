@@ -34,7 +34,6 @@ def correct_grammar_in_instructions(
     # Load the model and tokenizer
     logger.info(f"Loading model {model_id!r} for correcting grammar in instructions...")
     model = load_vllm_model(model_id=model_id)
-    tokenizer = model.get_tokenizer()
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -49,21 +48,11 @@ def correct_grammar_in_instructions(
         correction_prompt.format(text=instruction.instruction)
         for instruction in instructions
     ]
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=GrammarCorrectionResponse
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=GrammarCorrectionResponse,
     )
     for instruction, response in zip(corrected_instructions, responses):
         try:
@@ -90,21 +79,11 @@ def correct_grammar_in_instructions(
         )
         for instruction in instructions
     ]
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=GrammarCorrectionResponse
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=GrammarCorrectionResponse,
     )
     for instruction, response in zip(corrected_instructions, responses):
         try:
@@ -158,7 +137,6 @@ def correct_bad_quality_instructions(
         f"Loading model {model_id!r} for correcting bad quality instructions..."
     )
     model = load_vllm_model(model_id=model_id)
-    tokenizer = model.get_tokenizer()
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -173,22 +151,11 @@ def correct_bad_quality_instructions(
         correction_prompt.format(prompt=repr(instruction))
         for instruction in instructions
     ]
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
-
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=InstructionSample
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=InstructionSample,
     )
     for instruction, response in zip(corrected_instructions, responses):
         if response.done_reason == "stop":

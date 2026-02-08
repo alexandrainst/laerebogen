@@ -60,7 +60,6 @@ def generate_instruction_following_data(
     """
     logger.info(f"Loading model {model_id!r} for generating instructions...")
     model = load_vllm_model(model_id=model_id)
-    tokenizer = model.get_tokenizer()
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -123,24 +122,11 @@ def generate_instruction_following_data(
             ).strip()
             for _ in range(batch_size)
         ]
-
-        # Apply the chat template to the prompts
-        batch_inputs = [  # type: ignore[bad-assignment]
-            tokenizer.apply_chat_template(
-                [dict(role="user", content=prompt)],
-                add_generation_prompt=True,
-                tokenize=False,
-            )
-            for prompt in tqdm(
-                iterable=batch_inputs,
-                desc="Applying chat template to prompts",
-                unit="prompt",
-                leave=False,
-            )
-        ]
-
         responses = generate_text_with_vllm(
-            prompts=batch_inputs, model=model, response_format=InstructionSamples
+            prompts=batch_inputs,
+            model=model,
+            apply_chat_template=True,
+            response_format=InstructionSamples,
         )
 
         # Extract and filter the generated instructions

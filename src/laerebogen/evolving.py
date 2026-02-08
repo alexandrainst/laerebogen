@@ -67,9 +67,6 @@ def evolve_instructions(
     # Deep copy the instructions to avoid side effects
     instructions = deepcopy(instructions)
 
-    # Load the tokenizer
-    tokenizer = model.get_tokenizer()
-
     # Load the prompts
     with Path(rewriter_prompt_path).open() as f:
         rewriter_prompt = f.read() + "\n"
@@ -89,22 +86,12 @@ def evolve_instructions(
         .format(instruction=instruction.instruction)
         for instruction in instructions
     ]
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=prompt)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for prompt in tqdm(
-            iterable=prompts,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
     evolved_instructions: list[InstructionSample] = list()
     for response in generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=EvolvedInstruction
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=EvolvedInstruction,
     ):
         if response.done_reason != "stop":
             continue
@@ -122,21 +109,11 @@ def evolve_instructions(
 
     # Get the corresponding outputs
     logger.info("Generating outputs for evolved instructions...")
-    prompts = [
-        tokenizer.apply_chat_template(  # type: ignore[misc]
-            [dict(role="user", content=instruction.instruction)],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        for instruction in tqdm(
-            iterable=evolved_instructions,
-            desc="Applying chat template to prompts",
-            unit="prompt",
-            leave=False,
-        )
-    ]
     responses = generate_text_with_vllm(
-        prompts=prompts, model=model, response_format=EvolvedOutput
+        prompts=prompts,
+        model=model,
+        apply_chat_template=True,
+        response_format=EvolvedOutput,
     )
     for instruction, output in zip(evolved_instructions, responses):
         if output.done_reason == "stop":
