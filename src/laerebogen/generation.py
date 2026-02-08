@@ -60,6 +60,7 @@ def generate_instruction_following_data(
     """
     logger.info(f"Loading model {model_id!r} for generating instructions...")
     model = load_vllm_model(model_id=model_id)
+    tokenizer = model.get_tokenizer()
 
     # Load the prompt
     with Path(prompt_path).open() as f:
@@ -109,23 +110,35 @@ def generate_instruction_following_data(
     while len(machine_instruction_data) < num_instructions_to_generate:
         # Randomly sample some seed instructions, that the new instructions should be
         # based on
-        batch_inputs = []
-        for _ in range(batch_size):
-            encoded_prompt = generation_prompt.format(
+        batch_inputs: list[str] = [
+            generation_prompt.format(
                 seed_instructions="\n".join(
                     [
-                        json.dumps(
-                            dict(instruction=seed.instruction, output=seed.output)
-                        )
+                        seed.model_dump_json()
                         for seed in random.sample(
                             population=seed_instruction_data, k=num_prompt_instructions
                         )
                     ]
                 )
             ).strip()
-            batch_inputs.append(encoded_prompt)
+            for _ in range(batch_size)
+        ]
 
-        # Generate new instructions with the LLM
+        # Apply the chat template to the prompts
+        batch_inputs = [  # type: ignore[bad-assignment]
+            tokenizer.apply_chat_template(
+                [dict(role="user", content=prompt)],
+                add_generation_prompt=True,
+                tokenize=False,
+            )
+            for prompt in tqdm(
+                iterable=batch_inputs,
+                desc="Applying chat template to prompts",
+                unit="prompt",
+                leave=False,
+            )
+        ]
+
         responses = generate_text_with_vllm(
             prompts=batch_inputs, model=model, response_format=InstructionSamples
         )
