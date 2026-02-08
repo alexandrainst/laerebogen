@@ -60,9 +60,6 @@ def correct_grammar_in_instructions(
                 response.completion
             ).corrected_text
         except ValidationError:
-            logger.warning(
-                "Failed to parse the grammar corrected instruction. Skipping it."
-            )
             continue
         if response.done_reason == "stop":
             instruction.instruction = (
@@ -91,7 +88,6 @@ def correct_grammar_in_instructions(
                 response.completion
             ).corrected_text
         except ValidationError:
-            logger.warning("Failed to parse the grammar corrected output. Skipping it.")
             continue
         if response.done_reason == "stop":
             instruction.output = (
@@ -164,10 +160,6 @@ def correct_bad_quality_instructions(
                     json_data=response.completion
                 )
             except ValidationError:
-                logger.warning(
-                    "Failed to parse the bad quality corrected instruction. "
-                    "Skipping it."
-                )
                 continue
             instruction.instruction = new_instruction.instruction.strip()
             instruction.output = new_instruction.output.strip()

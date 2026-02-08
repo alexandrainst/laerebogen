@@ -139,10 +139,7 @@ def generate_instruction_following_data(
                     response.completion
                 ).instructions
             except ValidationError:
-                logger.warning(
-                    "Failed to parse the response as a list of instructions. Skipping "
-                    f"it. The response was: {response.completion}"
-                )
+                continue
             instruction_data.extend(
                 [
                     instruction

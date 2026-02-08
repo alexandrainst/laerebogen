@@ -100,7 +100,6 @@ def evolve_instructions(
                 json_data=response.completion
             ).new_prompt
         except ValidationError:
-            logger.warning("Failed to parse the evolved instruction. Skipping it.")
             continue
 
         evolved_instructions.append(
@@ -122,7 +121,6 @@ def evolve_instructions(
                     output.completion.strip()
                 ).new_output
             except ValidationError:
-                logger.warning("Failed to parse the evolved output. Skipping it.")
                 continue
 
     # Filter the evolved instructions
