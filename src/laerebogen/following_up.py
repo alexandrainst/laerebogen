@@ -42,7 +42,7 @@ def add_follow_up_to_conversations(
 
     # Add follow-ups to the instructions
     prompts = [
-        follow_up_prompt.format(conversation=str(conversation))
+        follow_up_prompt.format(conversation=conversation.model_dump_json())
         for conversation in conversations
     ]
     responses = generate_text_with_vllm(

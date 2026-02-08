@@ -16,7 +16,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from .data_models import EvolvedInstruction, EvolvedOutput, InstructionSample
+from .data_models import InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm
 
@@ -27,16 +27,16 @@ logger = logging.getLogger(__name__)
 
 
 METHODS = dict(
-    add_constraints="Tilføj venligst endnu en begrænsning eller krav til "
-    "instruktionen.",
-    deepen="Hvis instruktionen indeholder forespørgsler om bestemte emner, kan "
-    "dybden og bredden af forespørgslen øges.",
-    concretise="Erstat venligst generelle begreber med mere specifikke begreber.",
-    increase_reasoning_steps="Hvis #Original Prompt# kan løses med blot et par enkle "
-    "tankeprocesser, kan du omskrive den, så den eksplicit beder om at ræsonnere i "
-    "flere trin.",
-    complicate_input="Du skal tilføje {format} data som inputdata til "
-    "#Omskrevet Prompt#.",
+    add_constraints="Tilføj endnu en begrænsning eller krav til instruktionen.",
+    deepen="Hvis instruktionen indeholder forespørgsler om bestemte emner, skal du øge "
+    "dybden og bredden af forespørgslen.",
+    concretise="Erstat generelle begreber med mere specifikke begreber.",
+    increase_reasoning_steps="Hvis den originale prompt kan løses med blot et par "
+    "enkle tankeprocesser, kan du omskrive den, så den eksplicit beder om at "
+    "ræsonnere i flere trin.",
+    complicate_input="Du skal tilføje {format} data til den nye instruktion. Dette "
+    "kan både være som input til den nye instruktion, eller bede om at få svaret "
+    "i {format} format.",
 )
 
 
@@ -83,7 +83,7 @@ def evolve_instructions(
     prompts = [
         random.choice(templates)
         .replace("{format}", random.choice(FORMATS))
-        .format(instruction=instruction.instruction)
+        .format(instruction=instruction.model_dump_json())
         for instruction in instructions
     ]
     evolved_instructions: list[InstructionSample] = list()
@@ -91,37 +91,17 @@ def evolve_instructions(
         prompts=prompts,
         model=model,
         apply_chat_template=True,
-        response_format=EvolvedInstruction,
+        response_format=InstructionSample,
     ):
         if response.done_reason != "stop":
             continue
         try:
-            new_prompt = EvolvedInstruction.model_validate_json(
+            evolved_instruction = InstructionSample.model_validate_json(
                 json_data=response.completion
-            ).new_prompt
+            )
+            evolved_instructions.append(evolved_instruction)
         except ValidationError:
             continue
-
-        evolved_instructions.append(
-            InstructionSample(instruction=new_prompt, output="")
-        )
-
-    # Get the corresponding outputs
-    logger.info("Generating outputs for evolved instructions...")
-    responses = generate_text_with_vllm(
-        prompts=prompts,
-        model=model,
-        apply_chat_template=True,
-        response_format=EvolvedOutput,
-    )
-    for instruction, output in zip(evolved_instructions, responses):
-        if output.done_reason == "stop":
-            try:
-                instruction.output = EvolvedOutput.model_validate_json(
-                    output.completion.strip()
-                ).new_output
-            except ValidationError:
-                continue
 
     # Filter the evolved instructions
     logger.info("Filtering evolved instructions...")

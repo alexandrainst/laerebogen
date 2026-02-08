@@ -7,7 +7,7 @@ from pathlib import Path
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from .data_models import GrammarCorrectionResponse, InstructionSample
+from .data_models import InstructionSample
 from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
@@ -39,62 +39,31 @@ def correct_grammar_in_instructions(
     with Path(prompt_path).open() as f:
         correction_prompt = f.read() + "\n"
 
-    # Copy the instructions to avoid modifying the original ones
-    corrected_instructions = deepcopy(instructions)
-
     # Correct the instructions
     logger.info("Correcting grammar in instructions...")
     prompts = [
-        correction_prompt.format(text=instruction.instruction)
+        correction_prompt.format(instruction=instruction.instruction)
         for instruction in instructions
     ]
     responses = generate_text_with_vllm(
         prompts=prompts,
         model=model,
         apply_chat_template=True,
-        response_format=GrammarCorrectionResponse,
+        response_format=InstructionSample,
     )
-    for instruction, response in zip(corrected_instructions, responses):
-        try:
-            response.completion = GrammarCorrectionResponse.model_validate_json(
-                response.completion
-            ).corrected_text
-        except ValidationError:
-            continue
-        if response.done_reason == "stop":
-            instruction.instruction = (
-                response.completion.strip()
-                if response.completion.strip() != "<empty>"
-                else ""
-            )
 
-    # Correct the outputs
-    logger.info("Correcting grammar in outputs...")
-    prompts = [
-        correction_prompt.format(
-            text=instruction.output if instruction.output else "<empty>"
-        )
-        for instruction in instructions
-    ]
-    responses = generate_text_with_vllm(
-        prompts=prompts,
-        model=model,
-        apply_chat_template=True,
-        response_format=GrammarCorrectionResponse,
-    )
-    for instruction, response in zip(corrected_instructions, responses):
+    # Convert the responses to InstructionSample objects
+    corrected_instructions: list[InstructionSample] = list()
+    for response in responses:
+        if response.done_reason == "stop":
+            continue
         try:
-            response.completion = GrammarCorrectionResponse.model_validate_json(
+            corrected_instruction = InstructionSample.model_validate_json(
                 response.completion
-            ).corrected_text
+            )
+            corrected_instructions.append(corrected_instruction)
         except ValidationError:
             continue
-        if response.done_reason == "stop":
-            instruction.output = (
-                response.completion.strip()
-                if response.completion.strip() != "<empty>"
-                else ""
-            )
 
     # Filter the corrected instructions
     logger.info(f"Filtering {len(corrected_instructions):,} corrected instructions...")
@@ -144,7 +113,7 @@ def correct_bad_quality_instructions(
     # Correct the instructions
     logger.info("Correcting bad quality instructions...")
     prompts = [
-        correction_prompt.format(prompt=repr(instruction))
+        correction_prompt.format(instruction=instruction.model_dump_json())
         for instruction in instructions
     ]
     responses = generate_text_with_vllm(

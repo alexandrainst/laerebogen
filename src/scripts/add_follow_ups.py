@@ -87,7 +87,7 @@ def main(
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
         conversations = [
-            Conversation.from_json(line.strip()) for line in f if line.strip()
+            Conversation.model_validate_json(line.strip()) for line in f if line.strip()
         ]
 
     # Load the model
@@ -115,7 +115,7 @@ def main(
     )
     with conversation_path.open("w", encoding="utf-8") as f:
         for conversation in conversations:
-            f.write(conversation.json() + "\n")
+            f.write(conversation.model_dump_json() + "\n")
     logger.info(
         f"Saved {len(conversations):,} conversations with follow-ups to "
         f"{conversation_path.resolve()!r}"

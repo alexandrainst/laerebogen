@@ -1,16 +1,21 @@
 """Data models used in the project."""
 
-import json
 import typing as t
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from pydantic import BaseModel, Field
 
 from .constants import NUM_PROMPT_INSTRUCTIONS
 
 
-@dataclass
-class Conversation:
+class Message(BaseModel):
+    """A message in a conversation between a user and an LLM."""
+
+    role: t.Literal["user", "assistant"]
+    content: t.Annotated[str, Field(min_length=1)]
+
+
+class Conversation(BaseModel):
     """A conversation between a user and an LLM, used for instruction tuning.
 
     Attributes:
@@ -19,11 +24,9 @@ class Conversation:
             with keys "role" and "content".
     """
 
-    messages: list[dict[t.Literal["role", "content"], str]] = field(
-        default_factory=list
-    )
+    messages: list[Message]
 
-    def add_message(self, role: str, content: str) -> None:
+    def add_message(self, role: t.Literal["user", "assistant"], content: str) -> None:
         """Add a message to the conversation.
 
         Args:
@@ -32,78 +35,7 @@ class Conversation:
             content:
                 The content of the message.
         """
-        self.messages.append({"role": role, "content": content})
-
-    def json(self) -> str:
-        """Convert the conversation to a JSON string.
-
-        Returns:
-            A JSON string representation of the conversation.
-        """
-        return json.dumps(dict(messages=self.messages), ensure_ascii=False)
-
-    @classmethod
-    def from_json(cls, json_str: str) -> "Conversation":
-        """Create a conversation from a JSON string.
-
-        Args:
-            json_str:
-                A JSON string representation of the conversation.
-
-        Returns:
-            An instance of Conversation.
-
-        Raises:
-            ValueError:
-                If the JSON string is invalid or does not contain the expected
-                structure.
-        """
-        try:
-            conversation = json.loads(json_str)
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON string: {json_str!r}") from e
-        if not isinstance(conversation, dict):
-            raise ValueError(
-                f"Expected a dictionary, got {type(conversation).__name__}"
-            )
-        if "messages" in conversation:
-            return cls(messages=conversation["messages"])
-        elif "instruction" in conversation:
-            instruction_sample = InstructionSample.model_validate_json(json_str)
-            return cls.from_instruction_sample(instruction_sample=instruction_sample)
-        else:
-            raise ValueError(
-                "JSON string does not contain 'messages' or 'instruction' key."
-            )
-
-    @classmethod
-    def from_instruction_sample(
-        cls, instruction_sample: "InstructionSample"
-    ) -> "Conversation":
-        """Create a conversation from an instruction sample.
-
-        Args:
-            instruction_sample:
-                An instance of InstructionSample.
-
-        Returns:
-            An instance of Conversation with the instruction and output as messages.
-        """
-        conversation = cls()
-        conversation.add_message(role="user", content=instruction_sample.instruction)
-        conversation.add_message(role="assistant", content=instruction_sample.output)
-        return conversation
-
-    def __str__(self) -> str:
-        """Return a string representation of the conversation.
-
-        Returns:
-            A string representation of the conversation.
-        """
-        return "\n".join(
-            f"{message['role'].upper()}: {message['content']}"
-            for message in self.messages
-        )
+        self.messages.append(Message(role=role, content=content))
 
 
 @dataclass
@@ -131,8 +63,8 @@ class InstructionSample(BaseModel):
             The expected output of the instruction.
     """
 
-    instruction: str
-    output: str
+    instruction: t.Annotated[str, Field(min_length=10, max_length=1500)]
+    output: t.Annotated[str, Field(min_length=1)]
 
 
 class InstructionSamples(BaseModel):
@@ -142,21 +74,3 @@ class InstructionSamples(BaseModel):
         list[InstructionSample],
         Field(min_items=NUM_PROMPT_INSTRUCTIONS, max_items=NUM_PROMPT_INSTRUCTIONS),
     ]
-
-
-class GrammarCorrectionResponse(BaseModel):
-    """A response from the grammar correction model."""
-
-    corrected_text: t.Annotated[str, Field(min_length=1)]
-
-
-class EvolvedInstruction(BaseModel):
-    """An evolved instruction."""
-
-    new_prompt: t.Annotated[str, Field(min_length=1)]
-
-
-class EvolvedOutput(BaseModel):
-    """An evolved output."""
-
-    new_output: t.Annotated[str, Field(min_length=1)]

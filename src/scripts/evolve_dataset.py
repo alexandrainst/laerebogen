@@ -132,7 +132,7 @@ def main(
         ]
         random.shuffle(entire_dataset)
         for instruction in entire_dataset:
-            f.write(instruction.json() + "\n")
+            f.write(instruction.model_dump_json() + "\n")
     logger.info(
         f"Saved {len(entire_dataset):,} evolved instructions to {evolution_path!r}."
     )

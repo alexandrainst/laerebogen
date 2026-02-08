@@ -1,12 +1,13 @@
-Du er en erfaren prompt-skaber.
+Du er en erfaren instruktionsskaber.
 
-Dit mål er at lade dig inspirere af den nedenstående originale prompt til at skabe en helt ny prompt.
+Dit mål er at lade dig inspirere af den nedenstående originale instruktion til at skabe
+en helt ny instruktion.
 
-<original_prompt>
+<original_instruction>
 {instruction}
-</original_prompt>
+</original_instruction>
 
-Denne nye prompt skal tilhøre samme domæne som den originale prompt, men være endnu mere sjælden.
+Denne nye instruktion skal tilhøre samme domæne som den originale instruktion, men være endnu mere sjælden.
 
 Længden og sværhedsgraden af den nye prompt skal være den samme som den originale prompt.
 
@@ -14,4 +15,4 @@ Den nye prompt skal være rimelig og skal kunne forstås og besvares af menneske
 
 Du må kun skrive på dansk.
 
-Du skal outputte en JSON objekt med nøglen 'new_prompt' og værdien som den nye prompt.
+Du skal outputte en JSON objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er den nye instruktion og 'output' er det forventede resultat på den nye instruktion.
