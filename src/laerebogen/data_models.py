@@ -63,7 +63,7 @@ class InstructionSample(BaseModel):
             The expected output of the instruction.
     """
 
-    instruction: t.Annotated[str, Field(min_length=10, max_length=1500)]
+    instruction: t.Annotated[str, Field(min_length=10, max_length=5000)]
     output: t.Annotated[str, Field(min_length=1)]
 
 
