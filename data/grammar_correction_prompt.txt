@@ -6,6 +6,6 @@ Skriv følgende instruktion om, hvor du retter all stavefejl og grammatiske fejl
 {instruction}
 </instruction>
 
-Du må kun skrive på dansk.
+Du må kun skrive på dansk. Hvis instruktionen ikke er på dansk, skal du oversætte den til dansk.
 
 Du skal outputte et JSON objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er den rettede instruktion og 'output' er det forventede resultat på den rettede instruktion.
