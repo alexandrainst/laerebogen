@@ -145,7 +145,7 @@ def generate_instruction_following_data(
         for response in tqdm(
             iterable=responses, desc="Processing responses", leave=False
         ):
-            if not response.done_reason == "stop":
+            if response.done_reason != "stop":
                 continue
             try:
                 new_instructions = InstructionInputSamples.model_validate_json(
@@ -197,7 +197,7 @@ def generate_instruction_following_data(
             )
             instruction_data: list[InstructionSample] = list()
             for instruction, response in zip(instruction_input_data, responses):
-                if not response.done_reason == "stop":
+                if response.done_reason != "stop":
                     continue
                 try:
                     instruction_sample = InstructionSample(
