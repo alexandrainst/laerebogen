@@ -195,30 +195,24 @@ def generate_instruction_following_data(
                 apply_chat_template=True,
                 response_format=InstructionOutput,
             )
+            assert len(instruction_input_data) == len(responses), (
+                f"Number of responses ({len(responses)}) does not match number of "
+                f"input instructions ({len(instruction_input_data)})."
+            )
 
             # Extract and filter the generated outputs
-            instruction_output_data: list[InstructionOutput] = list()
-            for response in tqdm(
-                iterable=responses,
-                desc="Generating outputs for the new instructions",
-                leave=False,
-            ):
+            instruction_data: list[InstructionSample] = list()
+            for instruction, response in zip(instruction_input_data, responses):
                 if response.done_reason != "stop":
                     continue
                 try:
                     new_output = InstructionOutput.model_validate_json(
                         response.completion
-                    )
+                    ).output
                 except ValidationError:
                     continue
-                instruction_output_data.append(new_output)
-
-            instruction_data: list[InstructionSample] = list()
-            for instruction, output in zip(
-                instruction_input_data, instruction_output_data
-            ):
                 instruction_sample = InstructionSample(
-                    instruction=instruction.instruction, output=output.output
+                    instruction=instruction.instruction, output=new_output
                 )
                 instruction_data.append(instruction_sample)
 

@@ -1,6 +1,6 @@
 Din opgave er at skrive en liste med opgaveinstruktioner samt et svar på hver af dem.
 
-Her er kravene:
+Her er kravene til opgaveinstruktionerne:
 
 1. Prøv ikke at gentage verbet for hver instruktion for at gøre dem så forskellige som muligt.
 2. Sprogbruget i instruktionerne skal være forskelligt. Du bør f.eks. kombinere spørgsmål med bydende instruktioner.
@@ -11,10 +11,11 @@ Her er kravene:
 7. Instruktionerne skal være på dansk.
 8. Instruktionerne skal være 1 til 5 sætninger lange. Enten en bydende sætning eller et spørgsmål er tilladt.
 9. Undgå at bruge ordet "Instruktion" i selve instruktionen.
-10. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 10 JSON objekter, som hver har nøglen "instruction".
 
 Her er nogle eksempler på instruktioner, som du kan bruge som inspiration:
 
 <example_instructions>
 {seed_instructions}
 </example_instructions>
+
+Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 10 JSON objekter, som hver har nøglen "instruction", hvis værdien er en instruktion.
