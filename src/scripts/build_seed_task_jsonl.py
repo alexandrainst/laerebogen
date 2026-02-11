@@ -85,9 +85,11 @@ def process_alpaca_data(df: pd.DataFrame) -> list[dict[str, str]]:
     # If some of the translated columns were corrected, then we replace the original
     # translated columns with the corrected ones
     df.instruction = df.apply(
-        lambda row: row.corrected_instruction
-        if pd.notna(row.corrected_instruction)
-        else row.instruction,
+        lambda row: (
+            row.corrected_instruction
+            if pd.notna(row.corrected_instruction)
+            else row.instruction
+        ),
         axis=1,
     )
     df.input = df.apply(
@@ -95,9 +97,9 @@ def process_alpaca_data(df: pd.DataFrame) -> list[dict[str, str]]:
         axis=1,
     )
     df.output = df.apply(
-        lambda row: row.corrected_output
-        if pd.notna(row.corrected_output)
-        else row.output,
+        lambda row: (
+            row.corrected_output if pd.notna(row.corrected_output) else row.output
+        ),
         axis=1,
     )
 
@@ -118,12 +120,14 @@ def process_alpaca_data(df: pd.DataFrame) -> list[dict[str, str]]:
     )
 
     # Only keep the relevant columns
-    df = df[["id", "name", "instruction", "instances", "is_classification", "metadata"]]
+    df = df.loc[  # pyrefly: ignore[bad-assignment]
+        :, ["id", "name", "instruction", "instances", "is_classification", "metadata"]
+    ]
 
     # Convert the DataFrame to a list of dictionaries
     records = df.to_dict(orient="records")
 
-    return records
+    return records  # pyrefly: ignore[bad-return]
 
 
 def process_trustllm_data(df: pd.DataFrame) -> list[dict[str, str]]:
@@ -148,15 +152,17 @@ def process_trustllm_data(df: pd.DataFrame) -> list[dict[str, str]]:
     # If some of the translated columns were corrected, then we replace the original
     # translated columns with the corrected ones
     df.instruction = df.apply(
-        lambda row: row.corrected_instruction
-        if pd.notna(row.corrected_instruction)
-        else row.instruction,
+        lambda row: (
+            row.corrected_instruction
+            if pd.notna(row.corrected_instruction)
+            else row.instruction
+        ),
         axis=1,
     )
     df.output = df.apply(
-        lambda row: row.corrected_output
-        if pd.notna(row.corrected_output)
-        else row.output,
+        lambda row: (
+            row.corrected_output if pd.notna(row.corrected_output) else row.output
+        ),
         axis=1,
     )
 
@@ -165,18 +171,20 @@ def process_trustllm_data(df: pd.DataFrame) -> list[dict[str, str]]:
     df["name"] = [f"trustllm_{i}" for i in range(len(df))]
     df["instances"] = df.apply(lambda row: [dict(input="", output=row.output)], axis=1)
     df["is_classification"] = None
-    df["metadata"] = [
+    df["metadata"] = [  # pyrefly: ignore[unsupported-operation]
         dict(source="trustllm", has_input=False, original_source="TrustLLM")
         for _ in range(len(df))
     ]
 
     # Only keep the relevant columns
-    df = df[["id", "name", "instruction", "instances", "is_classification", "metadata"]]
+    df = df.loc[  # pyrefly: ignore[bad-assignment]
+        :, ["id", "name", "instruction", "instances", "is_classification", "metadata"]
+    ]
 
     # Convert the DataFrame to a list of dictionaries
     records = df.to_dict(orient="records")
 
-    return records
+    return records  # pyrefly: ignore[bad-return]
 
 
 if __name__ == "__main__":

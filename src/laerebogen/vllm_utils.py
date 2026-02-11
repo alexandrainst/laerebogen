@@ -5,7 +5,7 @@ import logging
 import os
 import typing as t
 
-import ray
+import ray._private.worker
 import torch
 import transformers.utils.logging as transformers_logging
 from pydantic import BaseModel
@@ -115,7 +115,7 @@ def load_vllm_model(model_id: str) -> "LLM":
     logging.getLogger("ray._private.utils").setLevel(logging.CRITICAL)
     os.environ["LOG_LEVEL"] = "CRITICAL"
     os.environ["VLLM_CONFIGURE_LOGGING"] = "0"
-    ray._private.worker._worker_logs_enabled = False
+    ray._private.worker._worker_logs_enabled = False  # pyrefly: ignore[bad-assignment]
 
     return LLM(
         model=model_id,
@@ -142,4 +142,6 @@ def get_pbar_without_leave(*tqdm_args, **tqdm_kwargs) -> tqdm:
         A tqdm progress bar.
     """
     tqdm_kwargs.pop("leave", None)  # Remove the 'leave' key if it exists
-    return tqdm(*tqdm_args, leave=False, **tqdm_kwargs)
+    return tqdm(  # pyrefly: ignore[no-matching-overload]
+        *tqdm_args, leave=False, **tqdm_kwargs
+    )

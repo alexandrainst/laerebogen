@@ -1,31 +1,32 @@
-"""Finetune a pre-trained generative language model on the generated dataset."""
+"""Finetune a pre-trained generative language model on a dataset."""
 
-import importlib.util
 import logging
 import os
-import typing as t
+import random
 import warnings
+from functools import partial
 
-if importlib.util.find_spec("unsloth") is not None or t.TYPE_CHECKING:
-    from unsloth import FastLanguageModel
-
+import numpy as np
 import torch
 import wandb
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
+from datasets.arrow_dataset import Dataset
 from dotenv import load_dotenv
-from peft import PeftModelForCausalLM
-from transformers import PreTrainedModel, PreTrainedTokenizer, PreTrainedTokenizerFast
+from transformers.data.data_collator import DataCollatorForSeq2Seq
+from transformers.modeling_utils import PreTrainedModel
+from transformers.models.auto.modeling_auto import AutoModelForSeq2SeqLM
+from transformers.models.auto.tokenization_auto import AutoTokenizer
 from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-from transformers.trainer_utils import IntervalStrategy, SchedulerType
+from transformers.trainer_seq2seq import Seq2SeqTrainer
+from transformers.trainer_utils import EvalPrediction, IntervalStrategy, SchedulerType
 from transformers.training_args import OptimizerNames
-from trl import SFTConfig, SFTTrainer
+from transformers.training_args_seq2seq import Seq2SeqTrainingArguments
 
 logger = logging.getLogger(__package__)
 
 load_dotenv()
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["UNSLOTH_RETURN_LOGITS"] = "1"
 
 
 def finetune_model(
@@ -33,9 +34,6 @@ def finetune_model(
     new_model_id: str,
     dataset_id: str,
     val_samples: int,
-    load_in_4bit: bool,
-    max_seq_length: int,
-    lora_rank: t.Literal[8, 16, 32, 64, 128, 256, 512],
     learning_rate: float,
     weight_decay: float,
     neftune_noise_alpha: int,
@@ -44,6 +42,7 @@ def finetune_model(
     num_epochs: int,
     warmup_ratio: float,
     logging_steps: int,
+    save_steps: int,
     eval_steps: int,
     dataloader_num_workers: int,
     use_wandb: bool,
@@ -66,22 +65,6 @@ def finetune_model(
         val_samples:
             The number of samples to use for the validation set. The rest of the
             samples will be used for the training set.
-        load_in_4bit:
-            Whether to load the model in 4-bit mode. If `True`, the model will be
-            loaded in 4-bit mode, which will reduce the memory usage of the model, but
-            may also reduce the performance of the model. If `False`, the model will be
-            loaded in 16-bit mode, which will increase the memory usage of the model,
-            but may also increase the performance of the model.
-        max_seq_length:
-            The maximum sequence length of the model. RoPE scaling is implemented, so
-            the model will be able to handle larger sequence lengths in any case.
-        lora_rank:
-            The rank of the LoRA adapter to use. The rank determines the number of
-            parameters in the adapter, and thus the capacity of the adapter to model
-            the dataset. The rank should be chosen based on the size of the dataset and
-            the complexity of the task. A higher rank will allow the adapter to model
-            more complex patterns in the dataset, but will also require more data to
-            train effectively. Can be one of 8, 16, 32, 64, or 128.
         learning_rate:
             The maximum learning rate to use for training. The learning rate will
             increase linearly from 0 to this value over the warmup steps.
@@ -109,6 +92,8 @@ def finetune_model(
             will increase linearly from 0 to `learning_rate` over the warmup steps.
         logging_steps:
             How often logging should occur during training.
+        save_steps:
+            How often the model should be saved.
         eval_steps:
             How often evaluation should occur during training.
         dataloader_num_workers:
@@ -121,25 +106,16 @@ def finetune_model(
             Whether to use a small subset of the dataset for testing. This can be useful
             for debugging and development, but may not provide a good estimate of the
             model's performance on the full dataset.
+
+    Raises:
+        ValueError:
+            If the base model ID is not valid or if the experiment tracking is not set
+            up.
     """
     assert total_batch_size % per_device_batch_size == 0, (
-        f"Total batch size ({total_batch_size}) must be divisible by per device batch "
-        f"size ({per_device_batch_size})."
+        f"Total batch size ({total_batch_size}) must be divisible by per "
+        f"device batch size ({per_device_batch_size})."
     )
-
-    match base_model_id.count("/"):
-        case 0:
-            base_model_id = f"unsloth/{base_model_id}"
-        case 1:
-            organisation = base_model_id.split("/")[0]
-            assert organisation == "unsloth", (
-                "Organisation of base model ID must be 'unsloth', but got "
-                f"{organisation!r}."
-            )
-        case _:
-            raise ValueError(
-                "Base model ID must not contain more than one forward slash."
-            )
 
     if use_wandb and "WANDB_API_KEY" not in os.environ:
         raise ValueError(
@@ -148,221 +124,228 @@ def finetune_model(
             "run the script with `use_wandb=false` to disable Weights & Biases."
         )
 
+    # Note if we're on the main process, if we are running in a distributed setting
+    is_main_process = os.getenv("RANK", "0") == "0"
+
     if testing:
-        total_batch_size = 2
+        total_batch_size = min(2, total_batch_size)
         per_device_batch_size = 1
         logging_steps = 1
         use_wandb = False
-        val_samples = 2
-        eval_steps = 5
+        val_samples = min(2, val_samples)
+        eval_steps = min(5, eval_steps)
         num_epochs = 10
-        logger.info("Running in testing mode.")
+        if is_main_process:
+            logger.info("Running in testing mode.")
 
     logger.info("Loading the dataset...")
     dataset = load_dataset(
         path=dataset_id, split="train", token=os.getenv("HUGGINGFACE_API_KEY", True)
     )
+
     assert isinstance(dataset, Dataset)
-
-    # Remove empty samples
-    dataset = dataset.filter(
-        function=lambda x: (
-            len(x["messages"]) > 0
-            and all(
-                len(message["content"]) > 0
-                for message in x["messages"]
-                if message["role"] in {"user", "assistant"}
-            )
-        ),
-        desc="Filtering empty samples",
-    )
-
     if testing:
-        dataset = dataset.select(range(4 + val_samples))
+        dataset = dataset.take(n=4 + val_samples)
+        assert isinstance(dataset, Dataset), (
+            f"Expected dataset to be of type Dataset, got {type(dataset)}"
+        )
 
-    logger.info(f"Loaded dataset with {len(dataset):,} examples.")
+    def tokenize_function(examples: dict, tokenizer: "PreTrainedTokenizerBase") -> dict:
+        """Tokenize a batch of examples.
 
-    dataset = dataset.train_test_split(test_size=val_samples, seed=4242, shuffle=True)
-    logger.info(
-        f"Using {len(dataset['train']):,} samples for training and "
-        f"{len(dataset['test']):,} samples for validation."
-    )
+        Args:
+            examples:
+                A batch of examples containing `src` and `tgt` fields.
+            tokenizer:
+                The tokenizer used for tokenization.
 
-    logger.info(f"Loading model and tokenizer with ID {base_model_id}...")
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=base_model_id,
-        max_seq_length=max_seq_length,
-        dtype=None,
-        load_in_4bit=load_in_4bit,
-        token=os.getenv("HUGGINGFACE_API_KEY", True),
-    )
-    assert isinstance(tokenizer, (PreTrainedTokenizer, PreTrainedTokenizerFast)), (
-        "Expected tokenizer to be a PreTrainedTokenizer or PreTrainedTokenizerFast, "
-        f"but got {type(tokenizer)}."
-    )
-    assert tokenizer.model_max_length >= max_seq_length, (
-        f"Tokenizer's model_max_length ({tokenizer.model_max_length:,}) must be "
-        f"greater than or equal to the given max_seq_length ({max_seq_length:,}). "
-        "Please reduce the --max-seq-length parameter."
-    )
+        Returns:
+            A batch of tokenized examples.
+        """
+        assert tokenizer.eos_token_id is not None, (
+            "Tokenizer does not have an EOS token defined."
+        )
+        model_inputs = tokenizer(examples["src"])
+        labels = tokenizer(examples["tgt"])
+        label_sequences = [
+            label_sequence + [tokenizer.eos_token_id]
+            if label_sequence[-1] != tokenizer.eos_token_id
+            else label_sequence
+            for label_sequence in labels["input_ids"]
+        ]
+        model_inputs["labels"] = label_sequences
+        assert all(
+            label_seq[-1] == tokenizer.eos_token_id
+            for label_seq in model_inputs["labels"]
+        ), "All label sequences must end with the EOS token."
+        return model_inputs
 
-    # Set up the jinja2 chat format for the tokenizer and model
-    bos_token = tokenizer.bos_token
-    assert bos_token is not None, (
-        "Tokenizer does not have a BOS token set. Please set the BOS token in the "
-        "tokenizer configuration."
-    )
-    eos_token = tokenizer.eos_token
-    assert eos_token is not None, (
-        "Tokenizer does not have an EOS token set. Please set the EOS token in the "
-        "tokenizer configuration."
-    )
-    chat_template = (
-        "{% for m in messages %}"
-        f"{{{{ '{bos_token}' + m['role'] + '\n' + m['content'] + '{eos_token}\n' }}}}"
-        "{% endfor %}"
-        "{% if add_generation_prompt %}"
-        f"{{{{ '{bos_token}assistant\n' }}}}"
-        "{% endif %}"
-    )
-    tokenizer.chat_template = chat_template
-    assert isinstance(model, PreTrainedModel)
-    assert isinstance(tokenizer, PreTrainedTokenizerBase)
+    if is_main_process:
+        logger.info("Tokenizing the dataset...")
 
-    logger.info("Converting the model to a PEFT model...")
-    peft_model: PeftModelForCausalLM = FastLanguageModel.get_peft_model(
-        model=model,
-        r=lora_rank,
-        lora_alpha=lora_rank * 2,
-        lora_dropout=0,
-        bias="none",
-        use_rslora=True,
-        use_gradient_checkpointing="unsloth",
-        random_state=4242,
+    tokenizer = AutoTokenizer.from_pretrained(
+        base_model_id, token=os.getenv("HF_API_TOKEN", True)
+    )
+    assert isinstance(tokenizer, PreTrainedTokenizerBase), (
+        "Expected tokenizer to be of type PreTrainedTokenizerBase, got "
+        f"{type(tokenizer)}"
     )
 
-    # Set up the training configuration
+    mapped = dataset.map(
+        partial(tokenize_function, tokenizer=tokenizer),
+        batched=True,
+        batch_size=16,
+        remove_columns=["src", "tgt"],
+    )
+    assert isinstance(mapped, Dataset), (
+        f"Expected mapped to be of type Dataset, got {type(mapped)}"
+    )
+    dataset = mapped
+
+    if is_main_process:
+        logger.info(
+            "Splitting dataset into train and validation sets with "
+            f"{val_samples} validation samples..."
+        )
+    train_val_split = dataset.train_test_split(test_size=val_samples, seed=42)
+    train_split = train_val_split["train"]
+    val_split = train_val_split["test"]
+    assert isinstance(train_split, Dataset), (
+        f"Expected train_split to be of type Dataset, got {type(train_split)}"
+    )
+    assert isinstance(val_split, Dataset), (
+        f"Expected val_split to be of type Dataset, got {type(val_split)}"
+    )
+
+    num_devices = torch.cuda.device_count()
     gradient_accumulation_steps = (
-        (total_batch_size // per_device_batch_size // torch.cuda.device_count())
-        if not testing
-        else 1
+        1 if testing else (total_batch_size // per_device_batch_size // num_devices)
     )
-    sft_config = SFTConfig(
+
+    training_args = Seq2SeqTrainingArguments(
         output_dir="outputs",
         run_name=new_model_id,
         per_device_train_batch_size=per_device_batch_size,
         per_device_eval_batch_size=per_device_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,
-        eval_accumulation_steps=gradient_accumulation_steps,
+        eval_accumulation_steps=1,
         num_train_epochs=num_epochs,
         warmup_ratio=warmup_ratio,
         learning_rate=learning_rate,
         logging_steps=logging_steps,
         eval_strategy=IntervalStrategy.STEPS,
         eval_steps=eval_steps,
+        save_strategy=IntervalStrategy.NO if testing else IntervalStrategy.STEPS,
+        save_steps=save_steps,
+        save_total_limit=2,
+        load_best_model_at_end=True,
         optim=OptimizerNames.PAGED_ADAMW_8BIT,
         weight_decay=weight_decay,
         lr_scheduler_type=SchedulerType.COSINE,
         seed=4242,
-        report_to=["wandb"] if use_wandb else [],
+        report_to=["wandb"] if use_wandb and is_main_process else [],
         fp16=not torch.cuda.is_bf16_supported(),
         bf16=torch.cuda.is_bf16_supported(),
         hub_model_id=new_model_id,
         push_to_hub=False,
+        hub_private_repo=True,
         dataloader_num_workers=dataloader_num_workers,
-        max_length=max_seq_length,
         neftune_noise_alpha=neftune_noise_alpha,
-        assistant_only_loss=True,
-        ddp_find_unused_parameters=False,
-        load_best_model_at_end=True,
-        save_only_model=False,
+        hub_token=os.getenv("HF_API_TOKEN"),
+        gradient_checkpointing_kwargs=dict(use_reentrant=False),
     )
 
-    def formatting_func(examples: dict) -> list[str]:
-        """Format the example for training.
+    if is_main_process:
+        logger.info(f"Loading base model and tokenizer with ID {base_model_id}...")
 
-        Args:
-            examples:
-                A batch of examples from the dataset.
+    model = AutoModelForSeq2SeqLM.from_pretrained(
+        base_model_id, token=os.getenv("HF_API_TOKEN", True)
+    )
+    assert isinstance(model, PreTrainedModel), (
+        f"Expected model to be of type PreTrainedModel, got {type(model)}"
+    )
 
-        Returns:
-            A list of formatted examples, ready for training.
-        """
-        formatted_texts = tokenizer.apply_chat_template(
-            conversation=examples["messages"],
-            add_generation_prompt=True,
-            tokenize=False,
-        )
-        if isinstance(formatted_texts, str):
-            formatted_texts = [formatted_texts]
-        assert isinstance(formatted_texts, list)
-        return formatted_texts  # type: ignore[return-value]
-
-    logger.info("Creating the SFT trainer...")
-    trainer = SFTTrainer(
-        model=peft_model,
+    if is_main_process:
+        logger.info("Creating the trainer...")
+    trainer = Seq2SeqTrainer(
+        model=model,
         processing_class=tokenizer,
-        train_dataset=dataset["train"],
-        eval_dataset=dataset["test"],
-        args=sft_config,
-        formatting_func=formatting_func,
+        train_dataset=train_split,
+        eval_dataset=val_split,  # pyrefly: ignore[bad-argument-type]
+        args=training_args,
+        compute_metrics=partial(compute_metrics, tokenizer=tokenizer),
+        data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer, padding="longest"),
     )
 
-    if use_wandb and not testing:
-        wandb.login(key=os.environ["WANDB_API_KEY"])  # type: ignore[attr-defined]
-        wandb.init(  # type: ignore[attr-defined]
-            project="laerebogen-finetuning",
+    if use_wandb and is_main_process and not testing:
+        wandb.login(key=os.environ["WANDB_API_KEY"])
+        wandb.init(
+            project="job-bot",
             config=dict(
                 base_model_id=base_model_id,
                 new_model_id=new_model_id,
-                load_in_4bit=load_in_4bit,
-                max_seq_length=max_seq_length,
-                lora_rank=lora_rank,
                 total_batch_size=total_batch_size,
-                train_samples=len(dataset["train"]),
-                val_samples=len(dataset["test"]),
+                val_samples=val_samples,
             )
-            | sft_config.to_dict(),
+            | training_args.to_dict(),
         )
 
-    logger.info("Training the model...")
+    if is_main_process:
+        logger.info("Training the model...")
     with warnings.catch_warnings():
         warnings.simplefilter(action="ignore", category=UserWarning)
         trainer.train()
 
-    logger.info("Finetuning complete. Generating a sample response...")
-    peft_model = FastLanguageModel.for_inference(peft_model)
-    if testing:
-        doc = dataset["train"][0]["messages"][0]["content"]
-    else:
-        doc = "Hvad synes du om Danish Foundation Models projektet?"
-    input_ids = tokenizer.apply_chat_template(
-        conversation=[dict(role="user", content=doc)],
-        tokenize=True,
-        add_generation_prompt=True,
-        return_tensors="pt",
-    )
-    assert isinstance(input_ids, torch.Tensor)
-    input_ids = input_ids.to("cuda")
-    assert isinstance(input_ids, torch.Tensor)
-    outputs = peft_model.generate(
-        input_ids=input_ids,
-        attention_mask=torch.ones_like(input_ids),
-        max_new_tokens=1024,
-    )
-    response = tokenizer.decode(outputs[0, input_ids.size(1) :])
-    logger.info("*** Sample response ***")
-    logger.info(f"Input: {doc!r}")
-    logger.info(f"Response: {response!r}")
+    if not testing and is_main_process:
+        logger.info(
+            f"Pushing the model to the Hugging Face Hub with ID {new_model_id}..."
+        )
+        trainer.push_to_hub()
 
-    logger.info(f"Pushing the model to the Hugging Face Hub with ID {new_model_id}...")
-    peft_model.push_to_hub_merged(
-        repo_id=new_model_id,
-        tokenizer=tokenizer,
-        save_method="merged_16bit",
-        token=os.getenv("HUGGINGFACE_API_KEY", True),
-        private=True,
+    if use_wandb and is_main_process:
+        wandb.finish()
+
+
+def compute_metrics(
+    eval_pred: EvalPrediction, tokenizer: "PreTrainedTokenizerBase"
+) -> dict[str, float]:
+    """Compute metrics for the evaluation.
+
+    Args:
+        eval_pred:
+            The evaluation prediction object containing the predictions and labels.
+        tokenizer:
+            The tokenizer used for decoding the predictions.
+
+    Returns:
+        A dictionary containing the computed metrics.
+    """
+    # Note if we're on the main process, if we are running in a distributed setting
+    is_main_process = os.getenv("RANK", "0") == "0"
+
+    # Get the labels
+    label_ids = eval_pred.label_ids
+    label_ids = [labels[labels != -100].tolist() for labels in label_ids]
+    labels = tokenizer.batch_decode(sequences=label_ids, skip_special_tokens=True)
+
+    # Get the predictions
+    logits = (
+        eval_pred.predictions[0]
+        if isinstance(eval_pred.predictions, tuple)
+        else eval_pred.predictions
+    )
+    assert isinstance(logits, np.ndarray), (
+        f"Expected logits to be of type np.ndarray, got {type(logits)}: {logits}"
+    )
+    predictions = np.argmax(logits, axis=-1)
+    completions = tokenizer.batch_decode(
+        sequences=predictions, skip_special_tokens=True
     )
 
-    if use_wandb:
-        wandb.finish()  # type: ignore[attr-defined]
+    # Log example prediction
+    if is_main_process:
+        random_idx = random.randint(0, len(completions) - 1)
+        logger.info(f"Example prediction:\n{completions[random_idx]!r}")
+        logger.info(f"Associated labels:\n{labels[random_idx]!r}")
+
+    return dict()

@@ -65,18 +65,5 @@ install-dependencies:
 	@uv python install 3.12
 	@uv sync --all-extras --python 3.12
 
-lint:  ## Lint the project
-	uv run ruff check . --fix --unsafe-fixes
-
-format:  ## Format the project
-	uv run ruff format .
-
-type-check:  ## Type-check the project
-	@uv run mypy . \
-		--install-types \
-		--non-interactive \
-		--ignore-missing-imports \
-		--show-error-codes \
-		--check-untyped-defs
-
-check: lint format type-check  ## Lint, format, and type-check the code
+check:  ## Lint, format, and type-check the code
+	@uv run pre-commit run --all-files

@@ -15,7 +15,6 @@ An instruction-following dataset for Danish.
 This dataset features 216,253 examples of multi-turn conversations in Danish, designed
 to train instruction-following models, with a commercially usable license.
 
-
 ## Dataset Structure
 
 All examples in the dataset are structured as follows:
@@ -23,26 +22,25 @@ All examples in the dataset are structured as follows:
 ```json
 {
   "messages": [
-	{
-		"role": "user",
-		"content": "(...)"
-	},
-	{
-		"role": "assistant",
-		"content": "(...)"
-	},
-	{
-		"role": "user",
-		"content": "(...)"
-	},
-	(...)
-	{
-		"role": "assistant",
-		"content": "(...)"
-	}
+ {
+  "role": "user",
+  "content": "(...)"
+ },
+ {
+  "role": "assistant",
+  "content": "(...)"
+ },
+ {
+  "role": "user",
+  "content": "(...)"
+ },
+ (...)
+ {
+  "role": "assistant",
+  "content": "(...)"
+ }
 }
 ```
-
 
 ## Dataset Generation Process
 
@@ -97,7 +95,6 @@ dataset and shuffled with the previous examples.
 Finally, we added 3 follow-up queries and answers to each of the examples in the
 dataset, again using the [Gemma-3-27b-it](https://hf.co/google/gemma-3-27b-it) model.
 
-
 ## License
 
 This dataset is licensed under the [Gemma Terms of
@@ -105,7 +102,6 @@ Use](https://ai.google.dev/gemma/terms), which allows use for both commercial an
 non-commercial purposes, provided that the dataset is not used to [cause
 harm](https://ai.google.dev/gemma/prohibited_use_policy). Any modifications of the
 dataset as well as models trained on it must also be shared under the same license.
-
 
 ## Creators and Funders
 

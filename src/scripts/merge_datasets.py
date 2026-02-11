@@ -44,7 +44,14 @@ logger = logging.getLogger("push_to_hub")
     help="Whether to create a public repository on the Hugging Face Hub.",
 )
 def main(dataset: list[str], new_dataset: str, public: bool) -> None:
-    """Merge multiple finetuning datasets into one and push to the Hugging Face Hub."""
+    """Merge multiple finetuning datasets into one and push to the Hugging Face Hub.
+
+    Raises:
+        ValueError:
+            If there are less than two datasets to merge.
+        FileExistsError:
+            If the new dataset ID already exists on the Hugging Face Hub.
+    """
     # Ensure that there are at least two datasets
     if len(dataset) < 2:
         raise ValueError("You need to specify at least two datasets to merge.")
@@ -63,7 +70,7 @@ def main(dataset: list[str], new_dataset: str, public: bool) -> None:
 
     # Load datasets
     logger.info("Loading datasets...")
-    datasets: list[Dataset] = [
+    datasets: list[Dataset] = [  # pyrefly: ignore[bad-assignment]
         load_dataset(
             dataset_name if ":" not in dataset_name else dataset_name.split(":")[0],
             split="train" if ":" not in dataset_name else dataset_name.split(":")[1],
@@ -81,7 +88,7 @@ def main(dataset: list[str], new_dataset: str, public: bool) -> None:
 
     # Only keep the `messages` column
     logger.info("Keeping only the 'messages' column in each dataset...")
-    datasets = [
+    datasets = [  # pyrefly: ignore[bad-assignment]
         ds.remove_columns(
             column_names=[col for col in ds.column_names if col != "messages"]
         )

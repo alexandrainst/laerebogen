@@ -50,7 +50,12 @@ from laerebogen.data_models import InstructionSample
     help="Enable verbose logging.",
 )
 def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) -> None:
-    """Correct the quality of samples in a generated instruction-following dataset."""
+    """Correct the quality of samples in a generated instruction-following dataset.
+
+    Raises:
+        FileNotFoundError:
+            If the dataset file does not exist.
+    """
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",

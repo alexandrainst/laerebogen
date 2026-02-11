@@ -6,9 +6,6 @@ Usage:
         [--new-model <new_model>] \
         [--dataset <dataset>] \
         [--val-samples <val_samples>] \
-        [--load-in-4bit] \
-        [--max-seq-length <max_seq_length>] \
-        [--lora-rank <lora_rank>] \
         [--learning-rate <learning_rate>] \
         [--weight-decay <weight_decay>] \
         [--neftune-noise-alpha <neftune_noise_alpha>] \
@@ -18,6 +15,7 @@ Usage:
         [--warmup-ratio <warmup_ratio>] \
         [--logging-steps <logging_steps>] \
         [--eval-steps <eval_steps>] \
+        [--save-steps <save_steps>] \
         [--dataloader-num-workers <dataloader_num_workers>] \
         [--use-wandb] \
         [--testing]
@@ -25,7 +23,6 @@ Usage:
 
 import logging
 import re
-import typing as t
 
 import click
 
@@ -66,26 +63,6 @@ logger = logging.getLogger("finetune_model")
     default=1024,
     show_default=True,
     help="Number of validation samples to use.",
-)
-@click.option(
-    "--load-in-4bit",
-    is_flag=True,
-    default=False,
-    help="Load the model in 4-bit precision.",
-)
-@click.option(
-    "--max-seq-length",
-    type=int,
-    default=4096,
-    show_default=True,
-    help="Maximum sequence length for the model.",
-)
-@click.option(
-    "--lora-rank",
-    type=click.Choice([8, 16, 32, 64, 128]),
-    default=32,
-    show_default=True,
-    help="Rank for LoRA finetuning.",
 )
 @click.option(
     "--learning-rate",
@@ -151,6 +128,13 @@ logger = logging.getLogger("finetune_model")
     help="Number of steps between evaluations.",
 )
 @click.option(
+    "--save-steps",
+    type=int,
+    default=1000,
+    show_default=True,
+    help="Number of steps between saving the model.",
+)
+@click.option(
     "--dataloader-num-workers",
     type=int,
     default=4,
@@ -171,9 +155,6 @@ def main(
     new_model: str | None,
     dataset: str,
     val_samples: int,
-    load_in_4bit: bool,
-    max_seq_length: int,
-    lora_rank: t.Literal[8, 16, 32, 64, 128],
     learning_rate: float,
     weight_decay: float,
     neftune_noise_alpha: int,
@@ -183,6 +164,7 @@ def main(
     warmup_ratio: float,
     logging_steps: int,
     eval_steps: int,
+    save_steps: int,
     dataloader_num_workers: int,
     use_wandb: bool,
     testing: bool,
@@ -203,9 +185,6 @@ def main(
         new_model_id=new_model,
         dataset_id=dataset,
         val_samples=val_samples,
-        load_in_4bit=load_in_4bit,
-        max_seq_length=max_seq_length,
-        lora_rank=lora_rank,
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         neftune_noise_alpha=neftune_noise_alpha,
@@ -214,6 +193,7 @@ def main(
         num_epochs=num_epochs,
         warmup_ratio=warmup_ratio,
         logging_steps=logging_steps,
+        save_steps=save_steps,
         eval_steps=eval_steps,
         dataloader_num_workers=dataloader_num_workers,
         use_wandb=use_wandb,

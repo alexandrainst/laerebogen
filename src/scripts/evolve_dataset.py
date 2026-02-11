@@ -77,7 +77,12 @@ def main(
     num_evolutions: int,
     verbose: bool,
 ) -> None:
-    """Evolve the instruction-following dataset."""
+    """Evolve the instruction-following dataset.
+
+    Raises:
+        FileNotFoundError:
+            If the dataset file does not exist.
+    """
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",

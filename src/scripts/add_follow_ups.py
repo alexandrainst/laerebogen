@@ -67,7 +67,12 @@ def main(
     num_follow_ups: int,
     verbose: bool,
 ) -> None:
-    """Add follow-up questions to a dataset of conversations."""
+    """Add follow-up questions to a dataset of conversations.
+
+    Raises:
+        FileNotFoundError:
+            If the dataset file does not exist.
+    """
     logging.basicConfig(
         level=logging.DEBUG if verbose else logging.INFO,
         format="%(asctime)s - %(message)s",
