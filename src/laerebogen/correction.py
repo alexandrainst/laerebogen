@@ -5,10 +5,8 @@ from copy import deepcopy
 from pathlib import Path
 
 from pydantic import ValidationError
-from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
-from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)
@@ -65,18 +63,6 @@ def correct_grammar_in_instructions(
         except ValidationError:
             continue
 
-    # Filter the corrected instructions
-    logger.info(f"Filtering {len(corrected_instructions):,} corrected instructions...")
-    corrected_instructions = [
-        instruction
-        for instruction in tqdm(
-            iterable=corrected_instructions,
-            desc="Filtering corrected instructions",
-            unit="instruction",
-        )
-        if keep_instruction(instruction_sample=instruction)
-    ]
-
     return corrected_instructions
 
 
@@ -132,17 +118,5 @@ def correct_bad_quality_instructions(
                 continue
             instruction.instruction = new_instruction.instruction.strip()
             instruction.output = new_instruction.output.strip()
-
-    # Filter the corrected instructions
-    logger.info(f"Filtering {len(corrected_instructions):,} corrected instructions...")
-    corrected_instructions = [
-        instruction
-        for instruction in tqdm(
-            iterable=corrected_instructions,
-            desc="Filtering corrected instructions",
-            unit="instruction",
-        )
-        if keep_instruction(instruction_sample=instruction)
-    ]
 
     return corrected_instructions

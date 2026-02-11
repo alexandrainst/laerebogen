@@ -132,8 +132,8 @@ dmypy.json
 .idea
 
 # Datasets
-data/dataset*.jsonl
-data/test_dataset*.jsonl
+**/dataset*.jsonl
+**/test_dataset*.jsonl
 
 # Training outputs
 outputs/

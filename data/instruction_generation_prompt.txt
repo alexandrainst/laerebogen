@@ -10,9 +10,8 @@ Her er kravene:
 6. En sprogmodel skal kunne gennemføre instruktionen. Bed f.eks. ikke assistenten om at oprette noget visuelt eller et lydoutput. Som et andet eksempel, bed ikke assistenten om at vække dig kl. 17 eller indstille en påmindelse, fordi den ikke kan udføre nogen handling.
 7. Instruktionerne skal være på dansk.
 8. Instruktionerne skal være 1 til 5 sætninger lange. Enten en bydende sætning eller et spørgsmål er tilladt.
-9. Outputtet skal være et passende svar på instruktionen. Sørg for, at outputtet er mindre end 300 ord.
-10. Undgå at bruge ordet "Instruktion" i selve instruktionen.
-11. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 10 JSON objekter med nøglerne "instruction" og "output".
+9. Undgå at bruge ordet "Instruktion" i selve instruktionen.
+10. Dit output er et JSON objekt med nøglen "instructions" og værdien er en liste af 10 JSON objekter, som hver har nøglen "instruction".
 
 Her er nogle eksempler på instruktioner, som du kan bruge som inspiration:
 

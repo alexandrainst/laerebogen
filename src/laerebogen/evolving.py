@@ -14,10 +14,8 @@ from copy import deepcopy
 from pathlib import Path
 
 from pydantic import ValidationError
-from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
-from .filtering import keep_instruction
 from .vllm_utils import generate_text_with_vllm
 
 if t.TYPE_CHECKING:
@@ -102,17 +100,5 @@ def evolve_instructions(
             evolved_instructions.append(evolved_instruction)
         except ValidationError:
             continue
-
-    # Filter the evolved instructions
-    logger.info("Filtering evolved instructions...")
-    evolved_instructions = [
-        instruction
-        for instruction in tqdm(
-            iterable=evolved_instructions,
-            desc="Filtering evolved instructions",
-            unit="instruction",
-        )
-        if keep_instruction(instruction_sample=instruction)
-    ]
 
     return evolved_instructions

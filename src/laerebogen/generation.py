@@ -16,8 +16,12 @@ from nlp_dedup import Deduper
 from pydantic import ValidationError
 from tqdm.auto import tqdm
 
-from .data_models import InstructionSample, InstructionSamples
-from .filtering import keep_instruction
+from .data_models import (
+    InstructionInput,
+    InstructionInputSamples,
+    InstructionOutput,
+    InstructionSample,
+)
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 logger = logging.getLogger(__name__)
@@ -25,7 +29,8 @@ logger = logging.getLogger(__name__)
 
 def generate_instruction_following_data(
     output_dir: str,
-    prompt_path: str,
+    input_generation_prompt_path: str,
+    output_generation_prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
     model_id: str,
@@ -45,8 +50,10 @@ def generate_instruction_following_data(
     Args:
         output_dir:
             Directory to save the generated dataset.
-        prompt_path:
-            Path to the prompt file.
+        input_generation_prompt_path:
+            Path to the prompt file containing the input generation prompt.
+        output_generation_prompt_path:
+            Path to the prompt file containing the output generation prompt.
         seed_tasks_path:
             Path to the seed tasks file.
         num_instructions_to_generate:
@@ -62,8 +69,10 @@ def generate_instruction_following_data(
     model = load_vllm_model(model_id=model_id)
 
     # Load the prompt
-    with Path(prompt_path).open() as f:
-        generation_prompt = f.read()
+    with Path(input_generation_prompt_path).open() as f:
+        input_generation_prompt = f.read()
+    with Path(output_generation_prompt_path).open() as f:
+        output_generation_prompt = f.read()
 
     # Load the seed tasks
     with Path(seed_tasks_path).open() as f:
@@ -83,11 +92,13 @@ def generate_instruction_following_data(
     output_path.touch(exist_ok=True)
 
     # Load the LM-generated instructions
-    machine_instruction_data = []
+    machine_instruction_data: list[InstructionSample] = list()
     if output_path.exists():
         with output_path.open() as f:
             machine_instruction_data = [
-                json.loads(line) for line in f.readlines() if line.strip()
+                InstructionSample.model_validate_json(line)
+                for line in f.readlines()
+                if line.strip()
             ]
         logger.info(
             f"Loaded {len(machine_instruction_data):,} machine-generated instructions."
@@ -103,14 +114,14 @@ def generate_instruction_following_data(
     # First we tokenise all the seed instructions and generated machine instructions
     all_instructions = [
         seed_instruction.instruction for seed_instruction in seed_instruction_data
-    ] + [instruction["instruction"] for instruction in machine_instruction_data]
+    ] + [instruction.instruction for instruction in machine_instruction_data]
 
     # Start generating instructions
     while len(machine_instruction_data) < num_instructions_to_generate:
         # Randomly sample some seed instructions, that the new instructions should be
         # based on
         batch_inputs: list[str] = [
-            generation_prompt.format(
+            input_generation_prompt.format(
                 seed_instructions="\n".join(
                     [
                         seed.model_dump_json()
@@ -126,27 +137,21 @@ def generate_instruction_following_data(
             prompts=batch_inputs,
             model=model,
             apply_chat_template=True,
-            response_format=InstructionSamples,
+            response_format=InstructionInputSamples,
         )
 
         # Extract and filter the generated instructions
-        instruction_data: list[InstructionSample] = []
+        instruction_input_data: list[InstructionInput] = list()
         for response in tqdm(
             iterable=responses, desc="Processing responses", leave=False
         ):
             try:
-                new_instructions = InstructionSamples.model_validate_json(
+                new_instructions = InstructionInputSamples.model_validate_json(
                     response.completion
                 ).instructions
             except ValidationError:
                 continue
-            instruction_data.extend(
-                [
-                    instruction
-                    for instruction in new_instructions
-                    if keep_instruction(instruction_sample=instruction)
-                ]
-            )
+            instruction_input_data.extend(new_instructions)
 
         # Remove duplicates
         deduper = Deduper(
@@ -158,25 +163,44 @@ def generate_instruction_following_data(
             similarity_threshold=0.8,  # The amount of overlap to count as a duplicate
             verbose=False,
         )
-        instruction_data = [
-            instruction_data[mask["id"] - len(all_instructions)]
+        instruction_input_data = [
+            instruction_input_data[mask["id"] - len(all_instructions)]
             for mask in tqdm(
                 iterable=deduper.deduplicate(
                     corpus=(
                         all_instructions  # type: ignore[bad-argument-type]
-                        + [obj.instruction for obj in instruction_data]
+                        + [obj.instruction for obj in instruction_input_data]
                     ),
                     overwrite=True,
                 )
                 or [],
                 desc="Removing duplicates",
                 leave=False,
-                total=len(instruction_data),
+                total=len(instruction_input_data),
             )
             if mask["id"] >= len(all_instructions) and not mask["duplicate"]
         ]
 
-        if instruction_data:
+        if instruction_input_data:
+            # Generate outputs for the deduplicated instructions
+            prompts = [
+                output_generation_prompt.format(instruction=instruction.instruction)
+                for instruction in instruction_input_data
+            ]
+            responses = generate_text_with_vllm(
+                prompts=prompts,
+                model=model,
+                apply_chat_template=True,
+                response_format=InstructionOutput,
+            )
+            instruction_data = [
+                InstructionSample(
+                    instruction=instruction.instruction, output=response.completion
+                )
+                for instruction, response in zip(instruction_input_data, responses)
+                if response.done_reason == "stop"
+            ]
+
             # Update the existing intermediate data
             machine_instruction_data.extend(instruction_data)
             all_instructions.extend(

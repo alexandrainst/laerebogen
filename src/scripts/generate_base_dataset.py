@@ -3,7 +3,8 @@
 Usage:
     python generate_base_dataset.py \
         [--output-dir <output_dir>] \
-        [--prompt-path <prompt_path>] \
+        [--input-generation-prompt-path <prompt_path>] \
+        [--output-generation-prompt-path <prompt_path>] \
         [--seed-tasks-path <seed_tasks_path>] \
         [--num-instructions-to-generate <num_instructions>] \
         [--model <model>] \
@@ -30,11 +31,18 @@ from laerebogen.generation import generate_instruction_following_data
     help="Directory to save the generated dataset.",
 )
 @click.option(
-    "--prompt-path",
+    "--input-generation-prompt-path",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-    default="data/generation_prompt.txt",
+    default="data/input_generation_prompt.txt",
     show_default=True,
-    help="Path to the prompt file.",
+    help="Path to the input generation prompt file.",
+)
+@click.option(
+    "--output-generation-prompt-path",
+    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    default="data/output_generation_prompt.txt",
+    show_default=True,
+    help="Path to the output generation prompt file.",
 )
 @click.option(
     "--seed-tasks-path",
@@ -74,7 +82,8 @@ from laerebogen.generation import generate_instruction_following_data
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
 def main(
     output_dir: str,
-    prompt_path: str,
+    input_generation_prompt_path: str,
+    output_generation_prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
     model: str,
@@ -96,7 +105,8 @@ def main(
 
     generate_instruction_following_data(
         output_dir=output_dir,
-        prompt_path=prompt_path,
+        input_generation_prompt_path=input_generation_prompt_path,
+        output_generation_prompt_path=output_generation_prompt_path,
         seed_tasks_path=seed_tasks_path,
         num_instructions_to_generate=num_instructions_to_generate,
         model_id=model,

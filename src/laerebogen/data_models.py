@@ -67,10 +67,32 @@ class InstructionSample(BaseModel):
     output: t.Annotated[str, Field(min_length=1)]
 
 
-class InstructionSamples(BaseModel):
-    """A list of generated instructions."""
+class InstructionInput(BaseModel):
+    """An input to the instruction generation model.
+
+    Attributes:
+        instruction:
+            The instruction to be followed by the model.
+    """
+
+    instruction: t.Annotated[str, Field(min_length=10, max_length=5000)]
+
+
+class InstructionOutput(BaseModel):
+    """An output from the instruction generation model.
+
+    Attributes:
+        output:
+            The expected output of the instruction.
+    """
+
+    output: t.Annotated[str, Field(min_length=1)]
+
+
+class InstructionInputSamples(BaseModel):
+    """A list of generated instruction inputs."""
 
     instructions: t.Annotated[
-        list[InstructionSample],
+        list[InstructionInput],
         Field(min_items=NUM_PROMPT_INSTRUCTIONS, max_items=NUM_PROMPT_INSTRUCTIONS),
     ]
