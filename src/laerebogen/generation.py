@@ -145,6 +145,8 @@ def generate_instruction_following_data(
         for response in tqdm(
             iterable=responses, desc="Processing responses", leave=False
         ):
+            if not response.done_reason == "stop":
+                continue
             try:
                 new_instructions = InstructionInputSamples.model_validate_json(
                     response.completion
@@ -193,13 +195,17 @@ def generate_instruction_following_data(
                 apply_chat_template=True,
                 response_format=InstructionOutput,
             )
-            instruction_data = [
-                InstructionSample(
-                    instruction=instruction.instruction, output=response.completion
-                )
-                for instruction, response in zip(instruction_input_data, responses)
-                if response.done_reason == "stop"
-            ]
+            instruction_data: list[InstructionSample] = list()
+            for instruction, response in zip(instruction_input_data, responses):
+                if not response.done_reason == "stop":
+                    continue
+                try:
+                    instruction_sample = InstructionSample(
+                        instruction=instruction.instruction, output=response.completion
+                    )
+                except ValidationError:
+                    continue
+                instruction_data.append(instruction_sample)
 
             # Update the existing intermediate data
             machine_instruction_data.extend(instruction_data)
