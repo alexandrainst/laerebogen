@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 def generate_instruction_following_data(
     output_dir: str,
-    input_generation_prompt_path: str,
+    instruction_generation_prompt_path: str,
     output_generation_prompt_path: str,
     seed_tasks_path: str,
     num_instructions_to_generate: int,
@@ -50,7 +50,7 @@ def generate_instruction_following_data(
     Args:
         output_dir:
             Directory to save the generated dataset.
-        input_generation_prompt_path:
+        instruction_generation_prompt_path:
             Path to the prompt file containing the input generation prompt.
         output_generation_prompt_path:
             Path to the prompt file containing the output generation prompt.
@@ -69,8 +69,8 @@ def generate_instruction_following_data(
     model = load_vllm_model(model_id=model_id)
 
     # Load the prompt
-    with Path(input_generation_prompt_path).open() as f:
-        input_generation_prompt = f.read()
+    with Path(instruction_generation_prompt_path).open() as f:
+        instruction_generation_prompt = f.read()
     with Path(output_generation_prompt_path).open() as f:
         output_generation_prompt = f.read()
 
@@ -121,7 +121,7 @@ def generate_instruction_following_data(
         # Randomly sample some seed instructions, that the new instructions should be
         # based on
         batch_inputs: list[str] = [
-            input_generation_prompt.format(
+            instruction_generation_prompt.format(
                 seed_instructions="\n".join(
                     [
                         seed.model_dump_json()
