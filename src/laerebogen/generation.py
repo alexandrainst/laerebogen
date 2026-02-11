@@ -143,7 +143,7 @@ def generate_instruction_following_data(
         # Extract and filter the generated instructions
         instruction_input_data: list[InstructionInput] = list()
         for response in tqdm(
-            iterable=responses, desc="Processing responses", leave=False
+            iterable=responses, desc="Generating new instructions", leave=False
         ):
             if response.done_reason != "stop":
                 continue
@@ -176,7 +176,7 @@ def generate_instruction_following_data(
                     overwrite=True,
                 )
                 or [],
-                desc="Removing duplicates",
+                desc="Removing duplicate instructions",
                 leave=False,
                 total=len(instruction_input_data),
             )
@@ -195,16 +195,31 @@ def generate_instruction_following_data(
                 apply_chat_template=True,
                 response_format=InstructionOutput,
             )
-            instruction_data: list[InstructionSample] = list()
-            for instruction, response in zip(instruction_input_data, responses):
+
+            # Extract and filter the generated outputs
+            instruction_output_data: list[InstructionOutput] = list()
+            for response in tqdm(
+                iterable=responses,
+                desc="Generating outputs for the new instructions",
+                leave=False,
+            ):
                 if response.done_reason != "stop":
                     continue
                 try:
-                    instruction_sample = InstructionSample(
-                        instruction=instruction.instruction, output=response.completion
+                    new_output = InstructionOutput.model_validate_json(
+                        response.completion
                     )
                 except ValidationError:
                     continue
+                instruction_output_data.append(new_output)
+
+            instruction_data: list[InstructionSample] = list()
+            for instruction, output in zip(
+                instruction_input_data, instruction_output_data
+            ):
+                instruction_sample = InstructionSample(
+                    instruction=instruction.instruction, output=output.output
+                )
                 instruction_data.append(instruction_sample)
 
             # Update the existing intermediate data
