@@ -50,7 +50,7 @@ from laerebogen.vllm_utils import load_vllm_model
 @click.option(
     "--model",
     type=str,
-    default="google/gemma-3-27b-it",
+    default="Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
     show_default=True,
     help="Model ID of the instruction-tuned large language model to use for evolution.",
 )
