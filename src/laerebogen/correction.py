@@ -75,7 +75,8 @@ def correct_grammar_in_instructions(
                     response.completion
                 )
                 corrected_instructions.append(corrected_instruction)
-            except ValidationError:
+            except ValidationError as e:
+                logger.warning(f"Error while correcting instruction: {e}")
                 continue
 
         yield corrected_instructions
