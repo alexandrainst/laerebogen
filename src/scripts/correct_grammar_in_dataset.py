@@ -15,6 +15,7 @@ import warnings
 from pathlib import Path
 
 import click
+import more_itertools as mit
 
 from laerebogen.correction import correct_grammar_in_instructions
 from laerebogen.data_models import InstructionSample
@@ -101,15 +102,27 @@ def main(
     corrected_path.parent.mkdir(parents=True, exist_ok=True)
     corrected_path.touch(exist_ok=True)
 
+    # Remove the samples that have already been corrected
+    if corrected_path.exists():
+        with corrected_path.open("r", encoding="utf-8") as f:
+            corrected_instructions = [
+                InstructionSample.model_validate_json(line.strip())
+                for line in f
+                if line.strip()
+            ]
+        instructions = [
+            instruction
+            for instruction in instructions
+            if instruction not in corrected_instructions
+        ]
+
     # Correct the grammar in the instructions and save the corrected instructions
-    for corrected_instruction_batch in correct_grammar_in_instructions(
-        instructions=instructions,
-        prompt_path=prompt_path,
-        model_id=model,
-        batch_size=batch_size,
-    ):
+    for batch in mit.chunked(iterable=instructions, n=batch_size):
+        corrected_instructions = correct_grammar_in_instructions(
+            instructions=batch, prompt_path=prompt_path, model_id=model
+        )
         with corrected_path.open("a", encoding="utf-8") as f:
-            for instruction in instructions:
+            for instruction in corrected_instructions:
                 f.write(instruction.model_dump_json() + "\n")
 
     logger.info(
