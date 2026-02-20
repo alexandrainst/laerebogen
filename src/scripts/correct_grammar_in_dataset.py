@@ -24,14 +24,18 @@ from laerebogen.data_models import InstructionSample
 @click.command()
 @click.option(
     "--dataset-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/dataset.jsonl",
     show_default=True,
     help="Path to the dataset file.",
 )
 @click.option(
     "--prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/grammar_correction_prompt.txt",
     show_default=True,
     help="Path to the grammar correction prompt file.",
@@ -59,11 +63,7 @@ from laerebogen.data_models import InstructionSample
     help="Enable verbose logging.",
 )
 def main(
-    dataset_path: str | Path,
-    prompt_path: str,
-    model: str,
-    batch_size: int,
-    verbose: bool,
+    dataset_path: Path, prompt_path: Path, model: str, batch_size: int, verbose: bool
 ) -> None:
     """Correct grammatical mistakes in a generated instruction-following dataset.
 
@@ -85,7 +85,6 @@ def main(
 
     # Load the dataset
     logger.info(f"Loading dataset from {dataset_path!r}...")
-    dataset_path = Path(dataset_path)
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
@@ -122,7 +121,7 @@ def main(
 
     for corrected_instruction in correct_instructions(
         instructions=instructions,
-        prompt_path=Path(prompt_path),
+        prompt_path=prompt_path,
         model_id=model,
         batch_size=batch_size,
     ):

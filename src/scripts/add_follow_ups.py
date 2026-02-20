@@ -6,6 +6,7 @@ Usage:
         [--prompt-path <prompt_path>] \
         [--model <model>] \
         [--num-follow-ups <num_follow_ups>] \
+        [--batch-size <batch_size>] \
         [--verbose]
 """
 
@@ -24,14 +25,18 @@ from laerebogen.following_up import add_follow_up_to_conversations
 @click.command()
 @click.option(
     "--dataset-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/dataset.evolved.jsonl",
     show_default=True,
     help="Path to the dataset file.",
 )
 @click.option(
     "--prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/follow_up_prompt.txt",
     show_default=True,
     help="Path to the grammar correction prompt file.",
@@ -66,8 +71,8 @@ from laerebogen.following_up import add_follow_up_to_conversations
     help="Enable verbose logging.",
 )
 def main(
-    dataset_path: str | Path,
-    prompt_path: str,
+    dataset_path: Path,
+    prompt_path: Path,
     model: str,
     num_follow_ups: int,
     batch_size: int,
@@ -93,7 +98,6 @@ def main(
 
     # Load the dataset
     logger.info(f"Loading dataset from {dataset_path!r}...")
-    dataset_path = Path(dataset_path)
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
     with dataset_path.open("r", encoding="utf-8") as f:

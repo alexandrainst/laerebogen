@@ -16,6 +16,7 @@ Usage:
 import logging
 import os
 import warnings
+from pathlib import Path
 
 import click
 
@@ -25,28 +26,36 @@ from laerebogen.generation import generate_instruction_following_data
 @click.command()
 @click.option(
     "--output-dir",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
+    type=click.Path(
+        exists=True, file_okay=False, dir_okay=True, writable=True, path_type=Path
+    ),
     default="data",
     show_default=True,
     help="Directory to save the generated dataset.",
 )
 @click.option(
     "--instruction-generation-prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/instruction_generation_prompt.txt",
     show_default=True,
     help="Path to the instruction generation prompt file.",
 )
 @click.option(
     "--output-generation-prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/output_generation_prompt.txt",
     show_default=True,
     help="Path to the output generation prompt file.",
 )
 @click.option(
     "--seed-tasks-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/seed_tasks.jsonl",
     show_default=True,
     help="Path to the seed tasks file.",
@@ -81,10 +90,10 @@ from laerebogen.generation import generate_instruction_following_data
 )
 @click.option("--verbose", is_flag=True, default=False, help="Enable verbose logging.")
 def main(
-    output_dir: str,
-    instruction_generation_prompt_path: str,
-    output_generation_prompt_path: str,
-    seed_tasks_path: str,
+    output_dir: Path,
+    instruction_generation_prompt_path: Path,
+    output_generation_prompt_path: Path,
+    seed_tasks_path: Path,
     num_instructions_to_generate: int,
     model: str,
     num_prompt_instructions: int,

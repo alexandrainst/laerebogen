@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def add_follow_up_to_conversations(
     conversations: list[Conversation],
-    prompt_path: str,
+    prompt_path: Path,
     model_id: str,
     num_follow_ups: int,
     batch_size: int,
@@ -38,7 +38,7 @@ def add_follow_up_to_conversations(
     Yields:
         The conversations with follow-up queries added.
     """
-    with Path(prompt_path).open() as f:
+    with prompt_path.open() as f:
         follow_up_prompt = f.read() + "\n"
 
     model = load_vllm_model(model_id=model_id)

@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 
 
 def generate_instruction_following_data(
-    output_dir: str,
-    instruction_generation_prompt_path: str,
-    output_generation_prompt_path: str,
-    seed_tasks_path: str,
+    output_dir: Path,
+    instruction_generation_prompt_path: Path,
+    output_generation_prompt_path: Path,
+    seed_tasks_path: Path,
     num_instructions_to_generate: int,
     model_id: str,
     num_prompt_instructions: int,
@@ -65,17 +65,15 @@ def generate_instruction_following_data(
         batch_size:
             Number of requests to send to the model at once.
     """
-    logger.info(f"Loading model {model_id!r} for generating instructions...")
     model = load_vllm_model(model_id=model_id)
 
-    # Load the prompt
-    with Path(instruction_generation_prompt_path).open() as f:
+    with instruction_generation_prompt_path.open() as f:
         instruction_generation_prompt = f.read()
-    with Path(output_generation_prompt_path).open() as f:
+    with output_generation_prompt_path.open() as f:
         output_generation_prompt = f.read()
 
     # Load the seed tasks
-    with Path(seed_tasks_path).open() as f:
+    with seed_tasks_path.open() as f:
         seed_tasks = [json.loads(line) for line in f.readlines() if line.strip()]
     seed_instruction_data = [
         InstructionSample(
@@ -87,7 +85,7 @@ def generate_instruction_following_data(
     logger.info(f"Loaded {len(seed_instruction_data)} human-written seed instructions.")
 
     # Ensure that the output file exists
-    output_path = Path(output_dir, "dataset.jsonl")
+    output_path = output_dir / "dataset.jsonl"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.touch(exist_ok=True)
 
