@@ -2,7 +2,6 @@
 
 import collections.abc as c
 import logging
-import typing as t
 from pathlib import Path
 
 import more_itertools as mit
@@ -11,9 +10,6 @@ from tqdm.auto import tqdm
 
 from .data_models import Conversation, InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
-
-if t.TYPE_CHECKING:
-    pass
 
 logger = logging.getLogger(__name__)
 
