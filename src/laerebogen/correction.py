@@ -57,7 +57,7 @@ def correct_grammar_in_instructions(
     ):
         prompts = [
             correction_prompt.format(instruction=instruction.instruction)
-            for instruction in instructions
+            for instruction in batch
         ]
         responses = generate_text_with_vllm(
             prompts=prompts,
