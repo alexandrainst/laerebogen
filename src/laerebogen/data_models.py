@@ -1,5 +1,6 @@
 """Data models used in the project."""
 
+import hashlib
 import typing as t
 from dataclasses import dataclass
 
@@ -13,6 +14,25 @@ class Message(BaseModel):
 
     role: t.Literal["user", "assistant"]
     content: t.Annotated[str, Field(min_length=1)]
+    hash: str | None = None
+
+    def model_post_init(self, __context: None) -> None:
+        """Compute the hash of the message after it is initialised."""
+        self.hash = hashlib.md5(string=(self.role + self.content).encode()).hexdigest()
+
+    def __eq__(self, other: object) -> bool:
+        """Check if two messages are equal.
+
+        Args:
+            other:
+                The other message to compare to.
+
+        Returns:
+            True if the messages are equal, False otherwise.
+        """
+        if not isinstance(other, Message):
+            return False
+        return self.hash == other.hash
 
 
 class Conversation(BaseModel):
@@ -25,6 +45,13 @@ class Conversation(BaseModel):
     """
 
     messages: list[Message]
+    hash: str | None = None
+
+    def model_post_init(self, __context: None) -> None:
+        """Compute the hash of the conversation after it is initialised."""
+        self.hash = hashlib.md5(
+            string="".join(message.hash or "" for message in self.messages).encode()
+        ).hexdigest()
 
     def add_message(self, role: t.Literal["user", "assistant"], content: str) -> None:
         """Add a message to the conversation.
@@ -36,6 +63,23 @@ class Conversation(BaseModel):
                 The content of the message.
         """
         self.messages.append(Message(role=role, content=content))
+        self.hash = hashlib.md5(
+            string="".join(message.hash or "" for message in self.messages).encode()
+        ).hexdigest()
+
+    def __eq__(self, other: object) -> bool:
+        """Check if two conversations are equal.
+
+        Args:
+            other:
+                The other conversation to compare to.
+
+        Returns:
+            True if the conversations are equal, False otherwise.
+        """
+        if not isinstance(other, Conversation):
+            return False
+        return self.hash == other.hash
 
 
 @dataclass
@@ -65,6 +109,27 @@ class InstructionSample(BaseModel):
 
     instruction: t.Annotated[str, Field(min_length=10, max_length=5000)]
     output: t.Annotated[str, Field(min_length=1)]
+    hash: str | None = None
+
+    def model_post_init(self, __context: None) -> None:
+        """Compute the hash of the instruction after it is initialised."""
+        self.hash = hashlib.md5(
+            string=(self.instruction + self.output).encode()
+        ).hexdigest()
+
+    def __eq__(self, other: object) -> bool:
+        """Check if two instruction samples are equal.
+
+        Args:
+            other:
+                The other instruction sample to compare to.
+
+        Returns:
+            True if the instruction samples are equal, False otherwise.
+        """
+        if not isinstance(other, InstructionSample):
+            return False
+        return self.hash == other.hash
 
 
 class InstructionInput(BaseModel):
