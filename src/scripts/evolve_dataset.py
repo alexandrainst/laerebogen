@@ -26,21 +26,27 @@ from laerebogen.evolving import evolve_instructions
 @click.command()
 @click.option(
     "--dataset-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/dataset.quality_corrected.jsonl",
     show_default=True,
     help="Path to the dataset file.",
 )
 @click.option(
     "--rewriter-prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/rewriter_prompt.txt",
     show_default=True,
     help="Path to the prompt file for rewriting instructions.",
 )
 @click.option(
     "--creator-prompt-path",
-    type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
+    type=click.Path(
+        exists=True, file_okay=True, dir_okay=False, readable=True, path_type=Path
+    ),
     default="data/creator_prompt.txt",
     show_default=True,
     help="Path to the prompt file for creating new instructions.",
@@ -75,9 +81,9 @@ from laerebogen.evolving import evolve_instructions
     help="Enable verbose logging.",
 )
 def main(
-    dataset_path: str | Path,
-    rewriter_prompt_path: str,
-    creator_prompt_path: str,
+    dataset_path: Path,
+    rewriter_prompt_path: Path,
+    creator_prompt_path: Path,
     model: str,
     num_evolutions: int,
     batch_size: int,
@@ -102,10 +108,9 @@ def main(
     warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
-    logger.info(f"Loading dataset from {dataset_path!r}...")
-    dataset_path = Path(dataset_path)
+    logger.info(f"Loading dataset from {dataset_path.as_posix()!r}...")
     if not dataset_path.exists():
-        raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
+        raise FileNotFoundError(f"Dataset file not found: {dataset_path.as_posix()!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
         instructions = [
             InstructionSample.model_validate_json(line.strip())
@@ -144,8 +149,8 @@ def main(
     for evolved_instruction, evolution in evolve_instructions(
         instructions=instructions,
         model_id=model,
-        rewriter_prompt_path=Path(rewriter_prompt_path),
-        creator_prompt_path=Path(creator_prompt_path),
+        rewriter_prompt_path=rewriter_prompt_path,
+        creator_prompt_path=creator_prompt_path,
         num_evolutions=num_evolutions,
         batch_size=batch_size,
     ):

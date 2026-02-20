@@ -97,9 +97,9 @@ def main(
     warnings.filterwarnings(action="ignore", category=FutureWarning)
 
     # Load the dataset
-    logger.info(f"Loading dataset from {dataset_path!r}...")
+    logger.info(f"Loading dataset from {dataset_path.as_posix()!r}...")
     if not dataset_path.exists():
-        raise FileNotFoundError(f"Dataset file not found: {dataset_path!r}")
+        raise FileNotFoundError(f"Dataset file not found: {dataset_path.as_posix()!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
         conversations = [
             Conversation.model_validate_json(line.strip()) for line in f if line.strip()
