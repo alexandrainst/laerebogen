@@ -101,6 +101,7 @@ def main(
     corrected_path.touch(exist_ok=True)
 
     # Remove the samples that have already been corrected
+    corrected_instructions: list[InstructionSample] = []
     if corrected_path.exists():
         with corrected_path.open() as f:
             corrected_instructions = [
@@ -112,14 +113,13 @@ def main(
                 f"Found {len(corrected_instructions):,} already corrected instructions "
                 f"in {corrected_path.as_posix()!r}"
             )
-        instructions = [
-            instruction
-            for instruction in instructions
-            if instruction not in corrected_instructions
-        ]
+
+    if len(instructions) == len(corrected_instructions):
+        return
 
     for corrected_instruction in correct_instructions(
         instructions=instructions,
+        already_corrected=corrected_instructions,
         prompt_path=prompt_path,
         model_id=model,
         batch_size=batch_size,

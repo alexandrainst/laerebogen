@@ -16,7 +16,6 @@ import warnings
 from pathlib import Path
 
 import click
-from tqdm.auto import tqdm
 
 from laerebogen.correction import correct_instructions
 from laerebogen.data_models import InstructionSample
@@ -103,6 +102,7 @@ def main(
     corrected_path.touch(exist_ok=True)
 
     # Remove the samples that have already been corrected
+    corrected_instructions: list[InstructionSample] = []
     if corrected_path.exists():
         with corrected_path.open() as f:
             corrected_instructions = [
@@ -114,19 +114,13 @@ def main(
                 f"Found {len(corrected_instructions):,} already corrected instructions "
                 f"in {corrected_path.as_posix()!r}"
             )
-        instructions = [
-            instruction
-            for instruction in tqdm(
-                iterable=instructions, desc="Removing already corrected instructions"
-            )
-            if instruction not in corrected_instructions
-        ]
 
-    if not instructions:
+    if len(instructions) == len(corrected_instructions):
         return
 
     for corrected_instruction in correct_instructions(
         instructions=instructions,
+        already_corrected=corrected_instructions,
         prompt_path=prompt_path,
         model_id=model,
         batch_size=batch_size,

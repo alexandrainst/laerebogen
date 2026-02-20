@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 def correct_instructions(
     instructions: list[InstructionSample],
+    already_corrected: list[InstructionSample],
     prompt_path: Path,
     model_id: str,
     batch_size: int,
@@ -25,6 +26,8 @@ def correct_instructions(
     Args:
         instructions:
             The instructions to correct.
+        already_corrected:
+            The instructions that have already been corrected.
         prompt_path:
             Path to the prompt file containing the correction prompt.
         model_id:
@@ -55,7 +58,10 @@ def correct_instructions(
     ):
         prompts = [
             correction_prompt.format(instruction=instruction.instruction)
-            for instruction in batch
+            for instruction in tqdm(
+                iterable=batch, desc="Preparing prompts", leave=False
+            )
+            if instruction not in already_corrected
         ]
         responses = generate_text_with_vllm(
             prompts=prompts,
