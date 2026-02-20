@@ -44,13 +44,26 @@ from laerebogen.data_models import InstructionSample
     "correction.",
 )
 @click.option(
+    "--batch-size",
+    type=int,
+    default=32_768,
+    show_default=True,
+    help="Number of samples to process with the LLM at the same time.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
     show_default=True,
     help="Enable verbose logging.",
 )
-def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) -> None:
+def main(
+    dataset_path: str | Path,
+    prompt_path: str,
+    model: str,
+    batch_size: int,
+    verbose: bool,
+) -> None:
     """Correct grammatical mistakes in a generated instruction-following dataset.
 
     Raises:
@@ -81,18 +94,24 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
             if line.strip()
         ]
 
-    # Correct the dataset
-    instructions = correct_grammar_in_instructions(
-        instructions=instructions, prompt_path=prompt_path, model_id=model
-    )
-
-    # Store the corrected instructions
+    # Set up the output path
     corrected_path = dataset_path.with_name(
         re.sub(r"\..+", "", dataset_path.stem) + ".grammar_corrected.jsonl"
     )
-    with corrected_path.open("w", encoding="utf-8") as f:
-        for instruction in instructions:
-            f.write(instruction.model_dump_json() + "\n")
+    corrected_path.parent.mkdir(parents=True, exist_ok=True)
+    corrected_path.touch(exist_ok=True)
+
+    # Correct the grammar in the instructions and save the corrected instructions
+    for corrected_instruction_batch in correct_grammar_in_instructions(
+        instructions=instructions,
+        prompt_path=prompt_path,
+        model_id=model,
+        batch_size=batch_size,
+    ):
+        with corrected_path.open("a", encoding="utf-8") as f:
+            for instruction in instructions:
+                f.write(instruction.model_dump_json() + "\n")
+
     logger.info(
         f"Saved {len(instructions):,} corrected instructions to "
         f"{corrected_path.resolve()!r}"

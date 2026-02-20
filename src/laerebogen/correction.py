@@ -1,9 +1,11 @@
 """Correcting generated instructions."""
 
+import collections.abc as c
 import logging
 from copy import deepcopy
 from pathlib import Path
 
+import more_itertools as mit
 from pydantic import ValidationError
 
 from .data_models import InstructionSample
@@ -13,8 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 def correct_grammar_in_instructions(
-    instructions: list[InstructionSample], prompt_path: str, model_id: str
-) -> list[InstructionSample]:
+    instructions: list[InstructionSample],
+    prompt_path: str,
+    model_id: str,
+    batch_size: int,
+) -> c.Generator[list[InstructionSample], None, None]:
     """Correct spelling mistakes using an instruction-tuned large language model.
 
     Args:
@@ -25,9 +30,11 @@ def correct_grammar_in_instructions(
         model_id:
             The model ID of the instruction-tuned large language model to use for
             correction.
+        batch_size:
+            The number of samples to process with the LLM at the same time.
 
-    Returns:
-        The corrected instructions.
+    Yields:
+        Batches of corrected instructions.
     """
     # Load the model and tokenizer
     logger.info(f"Loading model {model_id!r} for correcting grammar in instructions...")
@@ -37,33 +44,32 @@ def correct_grammar_in_instructions(
     with Path(prompt_path).open() as f:
         correction_prompt = f.read() + "\n"
 
-    # Correct the instructions
     logger.info("Correcting grammar in instructions...")
-    prompts = [
-        correction_prompt.format(instruction=instruction.instruction)
-        for instruction in instructions
-    ]
-    responses = generate_text_with_vllm(
-        prompts=prompts,
-        model=model,
-        apply_chat_template=True,
-        response_format=InstructionSample,
-    )
 
-    # Convert the responses to InstructionSample objects
     corrected_instructions: list[InstructionSample] = list()
-    for response in responses:
-        if response.done_reason == "stop":
-            continue
-        try:
-            corrected_instruction = InstructionSample.model_validate_json(
-                response.completion
-            )
-            corrected_instructions.append(corrected_instruction)
-        except ValidationError:
-            continue
+    for batch in mit.chunked(iterable=instructions, n=batch_size):
+        prompts = [
+            correction_prompt.format(instruction=instruction.instruction)
+            for instruction in batch
+        ]
+        responses = generate_text_with_vllm(
+            prompts=prompts,
+            model=model,
+            apply_chat_template=True,
+            response_format=InstructionSample,
+        )
+        for response in responses:
+            if response.done_reason == "stop":
+                continue
+            try:
+                corrected_instruction = InstructionSample.model_validate_json(
+                    response.completion
+                )
+                corrected_instructions.append(corrected_instruction)
+            except ValidationError:
+                continue
 
-    return corrected_instructions
+        yield corrected_instructions
 
 
 def correct_bad_quality_instructions(
