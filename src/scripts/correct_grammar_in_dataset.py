@@ -15,8 +15,6 @@ import warnings
 from pathlib import Path
 
 import click
-import more_itertools as mit
-from tqdm.auto import tqdm
 
 from laerebogen.correction import correct_grammar_in_instructions
 from laerebogen.data_models import InstructionSample
@@ -122,15 +120,12 @@ def main(
         num_batches += 1
 
     # Correct the grammar in the instructions and save the corrected instructions
-    for batch in tqdm(
-        iterable=mit.chunked(iterable=instructions, n=batch_size),
-        desc="Correcting grammar",
-        total=num_batches,
-        unit="batch",
+    for corrected_instructions in correct_grammar_in_instructions(
+        instructions=instructions,
+        prompt_path=prompt_path,
+        model_id=model,
+        batch_size=batch_size,
     ):
-        corrected_instructions = correct_grammar_in_instructions(
-            instructions=batch, prompt_path=prompt_path, model_id=model
-        )
         with corrected_path.open("a", encoding="utf-8") as f:
             for instruction in corrected_instructions:
                 f.write(instruction.model_dump_json() + "\n")
