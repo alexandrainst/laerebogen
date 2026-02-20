@@ -130,7 +130,6 @@ def main(
         model_id=model,
         batch_size=batch_size,
     ):
-        breakpoint()
         with corrected_path.open("a", encoding="utf-8") as f:
             for instruction in corrected_instructions:
                 f.write(instruction.model_dump_json() + "\n")

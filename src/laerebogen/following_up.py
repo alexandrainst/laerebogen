@@ -52,14 +52,15 @@ def add_follow_up_to_conversations(
         response_format=InstructionSample,
     )
     for conversation, response in zip(extended_conversations, responses):
-        if response.done_reason == "stop":
-            try:
-                new_query = InstructionSample.model_validate_json(
-                    json_data=response.completion
-                )
-            except ValidationError:
-                continue
-            conversation.add_message(role="user", content=new_query.instruction.strip())
-            conversation.add_message(role="assistant", content=new_query.output.strip())
+        if response.done_reason != "stop":
+            continue
+        try:
+            new_query = InstructionSample.model_validate_json(
+                json_data=response.completion
+            )
+        except ValidationError:
+            continue
+        conversation.add_message(role="user", content=new_query.instruction.strip())
+        conversation.add_message(role="assistant", content=new_query.output.strip())
 
     return extended_conversations
