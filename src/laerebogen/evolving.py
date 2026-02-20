@@ -7,16 +7,18 @@ complicated and diverse.
 [1] https://doi.org/10.48550/arXiv.2304.12244
 """
 
+import collections.abc as c
 import logging
 import random
 import typing as t
-from copy import deepcopy
 from pathlib import Path
 
+import more_itertools as mit
 from pydantic import ValidationError
+from tqdm.auto import tqdm
 
 from .data_models import InstructionSample
-from .vllm_utils import generate_text_with_vllm
+from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
 if t.TYPE_CHECKING:
     from vllm import LLM
@@ -43,62 +45,120 @@ FORMATS = ["JSON", "YAML", "Markdown", "Python"]
 
 def evolve_instructions(
     instructions: list[InstructionSample],
-    model: "LLM",
-    rewriter_prompt_path: str,
-    creator_prompt_path: str,
-) -> list[InstructionSample]:
+    model_id: str,
+    rewriter_prompt_path: Path,
+    creator_prompt_path: Path,
+    num_evolutions: int,
+    batch_size: int,
+) -> c.Generator[tuple[InstructionSample, int], None, None]:
     """Evolve an instruction using an instruction-tuned large language model.
 
     Args:
         instructions:
             The instructions to evolve.
-        model:
-            The instruction-tuned large language model to use for evolution.
+        model_id:
+            The ID of the instruction-tuned large language model to use for evolution.
         rewriter_prompt_path:
             Path to the prompt file containing the rewriter prompt.
         creator_prompt_path:
             Path to the prompt file containing the creator prompt.
+        num_evolutions:
+            The number of evolutions to perform.
+        batch_size:
+            The batch size to use for generating new instructions.
 
-    Returns:
-        The evolved instructions as well as the original instructions, shuffled.
+    Yields:
+        Pairs (instruction, evolution) where instruction is the evolved instruction and
+        evolution is the current evolution iteration.
     """
-    # Deep copy the instructions to avoid side effects
-    instructions = deepcopy(instructions)
+    for instruction in instructions:
+        yield instruction, 0
 
-    # Load the prompts
-    with Path(rewriter_prompt_path).open() as f:
+    with rewriter_prompt_path.open() as f:
         rewriter_prompt = f.read() + "\n"
-    with Path(creator_prompt_path).open() as f:
+    with creator_prompt_path.open() as f:
         creator_prompt = f.read() + "\n"
 
-    # Prepare the prompt templates
-    templates = [
+    model = load_vllm_model(model_id=model_id)
+
+    prompt_templates = [
         rewriter_prompt.replace("{method}", method) for method in METHODS.values()
     ] + [creator_prompt]
 
-    # Evolve the instructions
-    logger.info("Evolving instructions...")
+    pbar = (
+        tqdm(
+            iterable=range(1, 1 + num_evolutions),
+            desc="Evolving dataset",
+            unit="evolution",
+        )
+        if num_evolutions > 1
+        else range(1, 1 + num_evolutions)
+    )
+    for evolution in pbar:
+        yield from evolve_single_iteration(
+            instructions=instructions,
+            prompt_templates=prompt_templates,
+            model=model,
+            batch_size=batch_size,
+            evolution=evolution,
+        )
+
+
+def evolve_single_iteration(
+    instructions: list[InstructionSample],
+    prompt_templates: list[str],
+    model: "LLM",
+    batch_size: int,
+    evolution: int,
+) -> c.Generator[tuple[InstructionSample, int], None, None]:
+    """Evolve a single iteration of the dataset.
+
+    Args:
+        instructions:
+            The instructions to evolve.
+        prompt_templates:
+            The prompt templates to use for evolution.
+        model:
+            The instruction-tuned large language model to use for evolution.
+        batch_size:
+            The batch size to use for evolution.
+        evolution:
+            The current evolution iteration.
+
+    Yields:
+        Pairs (instruction, evolution) where instruction is the evolved instruction
+        and evolution is the current evolution iteration.
+    """
     prompts = [
-        random.choice(templates)
+        random.choice(prompt_templates)
         .replace("{format}", random.choice(FORMATS))
         .format(instruction=instruction.model_dump_json())
         for instruction in instructions
     ]
-    evolved_instructions: list[InstructionSample] = list()
-    for response in generate_text_with_vllm(
-        prompts=prompts,
-        model=model,
-        apply_chat_template=True,
-        response_format=InstructionSample,
-    ):
-        if response.done_reason != "stop":
-            continue
-        try:
-            evolved_instruction = InstructionSample.model_validate_json(
-                json_data=response.completion
-            )
-            evolved_instructions.append(evolved_instruction)
-        except ValidationError:
-            continue
 
-    return evolved_instructions
+    num_batches = len(prompts) // batch_size
+    if len(prompts) % batch_size:
+        num_batches += 1
+
+    for batch in tqdm(
+        iterable=mit.chunked(iterable=instructions, n=batch_size),
+        desc="Correcting grammar",
+        total=num_batches,
+        unit="batch",
+    ):
+        responses = generate_text_with_vllm(
+            prompts=batch,
+            model=model,
+            apply_chat_template=True,
+            response_format=InstructionSample,
+        )
+        for response in responses:
+            if response.done_reason != "stop":
+                continue
+            try:
+                evolved_instruction = InstructionSample.model_validate_json(
+                    json_data=response.completion
+                )
+                yield evolved_instruction, evolution
+            except ValidationError:
+                continue

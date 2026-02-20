@@ -102,6 +102,8 @@ def load_vllm_model(model_id: str) -> "LLM":
     Returns:
         The loaded vLLM model.
     """
+    logger.info(f"Loading model {model_id!r}...")
+
     transformers_logging.set_verbosity_error()
     logging.getLogger("vllm").setLevel(logging.CRITICAL)
     logging.getLogger("vllm.engine.llm_engine").setLevel(logging.CRITICAL)

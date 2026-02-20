@@ -5,6 +5,7 @@ Usage:
         [--dataset-path <dataset_path>] \
         [--prompt-path <prompt_path>] \
         [--model <model>] \
+        [--batch-size <batch_size>] \
         [--verbose]
 """
 
@@ -16,7 +17,7 @@ from pathlib import Path
 
 import click
 
-from laerebogen.correction import correct_grammar_in_instructions
+from laerebogen.correction import correct_instructions
 from laerebogen.data_models import InstructionSample
 
 
@@ -119,25 +120,14 @@ def main(
             if instruction not in corrected_instructions
         ]
 
-    num_batches = len(instructions) // batch_size
-    if len(instructions) % batch_size:
-        num_batches += 1
-
-    # Correct the grammar in the instructions and save the corrected instructions
-    for corrected_instructions in correct_grammar_in_instructions(
+    for corrected_instruction in correct_instructions(
         instructions=instructions,
-        prompt_path=prompt_path,
+        prompt_path=Path(prompt_path),
         model_id=model,
         batch_size=batch_size,
     ):
         with corrected_path.open("a", encoding="utf-8") as f:
-            for instruction in corrected_instructions:
-                f.write(instruction.model_dump_json() + "\n")
-
-    logger.info(
-        f"Saved {len(instructions):,} corrected instructions to "
-        f"{corrected_path.resolve()!r}"
-    )
+            f.write(corrected_instruction.model_dump_json() + "\n")
 
 
 if __name__ == "__main__":

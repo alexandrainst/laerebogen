@@ -5,6 +5,7 @@ Usage:
         [--dataset-path <dataset_path>] \
         [--prompt-path <prompt_path>] \
         [--model <model>] \
+        [--batch-size <batch_size>] \
         [--verbose]
 """
 
@@ -16,7 +17,7 @@ from pathlib import Path
 
 import click
 
-from laerebogen.correction import correct_bad_quality_instructions
+from laerebogen.correction import correct_instructions
 from laerebogen.data_models import InstructionSample
 
 
@@ -43,13 +44,26 @@ from laerebogen.data_models import InstructionSample
     help="Model ID of the instruction-tuned large language model to use for evolution.",
 )
 @click.option(
+    "--batch-size",
+    type=int,
+    default=32_768,
+    show_default=True,
+    help="Number of samples to process with the LLM at the same time.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
     show_default=True,
     help="Enable verbose logging.",
 )
-def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) -> None:
+def main(
+    dataset_path: str | Path,
+    prompt_path: str,
+    model: str,
+    batch_size: int,
+    verbose: bool,
+) -> None:
     """Correct the quality of samples in a generated instruction-following dataset.
 
     Raises:
@@ -80,22 +94,39 @@ def main(dataset_path: str | Path, prompt_path: str, model: str, verbose: bool) 
             if line.strip()
         ]
 
-    # Correct the dataset
-    instructions = correct_bad_quality_instructions(
-        instructions=instructions, prompt_path=prompt_path, model_id=model
-    )
-
-    # Store the corrected instructions
+    # Set up the output path
     corrected_path = dataset_path.with_name(
         re.sub(r"\..+", "", dataset_path.stem) + ".quality_corrected.jsonl"
     )
-    with corrected_path.open("w", encoding="utf-8") as f:
-        for instruction in instructions:
-            f.write(instruction.model_dump_json() + "\n")
-    logger.info(
-        f"Saved {len(instructions):,} corrected instructions to "
-        f"{corrected_path.resolve()!r}"
-    )
+    corrected_path.parent.mkdir(parents=True, exist_ok=True)
+    corrected_path.touch(exist_ok=True)
+
+    # Remove the samples that have already been corrected
+    if corrected_path.exists():
+        with corrected_path.open() as f:
+            corrected_instructions = [
+                InstructionSample.model_validate_json(line.strip())
+                for line in f
+                if line.strip()
+            ]
+            logger.info(
+                f"Found {len(corrected_instructions):,} already corrected instructions "
+                f"in {corrected_path.as_posix()!r}"
+            )
+        instructions = [
+            instruction
+            for instruction in instructions
+            if instruction not in corrected_instructions
+        ]
+
+    for corrected_instruction in correct_instructions(
+        instructions=instructions,
+        prompt_path=Path(prompt_path),
+        model_id=model,
+        batch_size=batch_size,
+    ):
+        with corrected_path.open("a", encoding="utf-8") as f:
+            f.write(corrected_instruction.model_dump_json() + "\n")
 
 
 if __name__ == "__main__":

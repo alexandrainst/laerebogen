@@ -16,11 +16,9 @@ import warnings
 from pathlib import Path
 
 import click
-from tqdm.auto import tqdm
 
 from laerebogen.data_models import Conversation
 from laerebogen.following_up import add_follow_up_to_conversations
-from laerebogen.vllm_utils import load_vllm_model
 
 
 @click.command()
@@ -54,6 +52,13 @@ from laerebogen.vllm_utils import load_vllm_model
     help="Number of follow-up questions to generate for each conversation.",
 )
 @click.option(
+    "--batch-size",
+    type=int,
+    default=8_192,
+    show_default=True,
+    help="Number of samples to process with the LLM at the same time.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -65,6 +70,7 @@ def main(
     prompt_path: str,
     model: str,
     num_follow_ups: int,
+    batch_size: int,
     verbose: bool,
 ) -> None:
     """Add follow-up questions to a dataset of conversations.
@@ -95,36 +101,40 @@ def main(
             Conversation.model_validate_json(line.strip()) for line in f if line.strip()
         ]
 
-    # Load the model
-    logger.info(f"Loading model {model!r} for adding follow-ups to instructions...")
-    vllm_model = load_vllm_model(model_id=model)
+    # Set up the output path
+    follow_up_path = dataset_path.with_name(
+        re.sub(r"\..+", "", dataset_path.stem) + ".evolved.jsonl"
+    )
+    follow_up_path.parent.mkdir(parents=True, exist_ok=True)
+    follow_up_path.touch(exist_ok=True)
 
-    # Add follow-ups to each conversation
-    pbar = (
-        tqdm(
-            iterable=range(num_follow_ups),
-            desc="Adding follow-ups to conversations",
-            unit="dataset pass",
-        )
-        if num_follow_ups > 1
-        else range(num_follow_ups)
-    )
-    for _ in pbar:
-        conversations = add_follow_up_to_conversations(
-            conversations=conversations, prompt_path=prompt_path, model=vllm_model
-        )
+    # Remove the samples that have already been corrected
+    if follow_up_path.exists():
+        with follow_up_path.open() as f:
+            conversations_with_follow_ups = [
+                Conversation.model_validate_json(line.strip())
+                for line in f
+                if line.strip()
+            ]
+            logger.info(
+                f"Found {len(conversations_with_follow_ups):,} conversations that "
+                f"already have follow-ups in {follow_up_path.as_posix()!r}"
+            )
+        conversations = [
+            conversation
+            for conversation in conversations
+            if conversation not in conversations_with_follow_ups
+        ]
 
-    # Store the extended conversations
-    conversation_path = dataset_path.with_name(
-        re.sub(r"\..+", "", dataset_path.stem) + ".with_follow_ups.jsonl"
-    )
-    with conversation_path.open("w", encoding="utf-8") as f:
-        for conversation in conversations:
-            f.write(conversation.model_dump_json() + "\n")
-    logger.info(
-        f"Saved {len(conversations):,} conversations with follow-ups to "
-        f"{conversation_path.resolve()!r}"
-    )
+    for conversation_with_follow_ups in add_follow_up_to_conversations(
+        conversations=conversations,
+        prompt_path=prompt_path,
+        model_id=model,
+        num_follow_ups=num_follow_ups,
+        batch_size=batch_size,
+    ):
+        with follow_up_path.open("a", encoding="utf-8") as f:
+            f.write(conversation_with_follow_ups.model_dump_json() + "\n")
 
 
 if __name__ == "__main__":

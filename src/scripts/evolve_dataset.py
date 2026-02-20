@@ -10,19 +10,17 @@ Usage:
         [--verbose]
 """
 
+import json
 import logging
 import os
-import random
 import re
 import warnings
 from pathlib import Path
 
 import click
-from tqdm.auto import tqdm
 
 from laerebogen.data_models import InstructionSample
 from laerebogen.evolving import evolve_instructions
-from laerebogen.vllm_utils import load_vllm_model
 
 
 @click.command()
@@ -63,6 +61,13 @@ from laerebogen.vllm_utils import load_vllm_model
     "1 + num_evolutions times larger than the original dataset.",
 )
 @click.option(
+    "--batch-size",
+    type=int,
+    default=32_768,
+    show_default=True,
+    help="Number of samples to process with the LLM at the same time.",
+)
+@click.option(
     "--verbose",
     is_flag=True,
     default=False,
@@ -75,6 +80,7 @@ def main(
     creator_prompt_path: str,
     model: str,
     num_evolutions: int,
+    batch_size: int,
     verbose: bool,
 ) -> None:
     """Evolve the instruction-following dataset.
@@ -107,40 +113,44 @@ def main(
             if line.strip()
         ]
 
-    # Load the model
-    logger.info(f"Loading model {model!r} for evolving instructions...")
-    vllm_model = load_vllm_model(model_id=model)
-
-    # Evolve the dataset
-    pbar = (
-        tqdm(iterable=range(num_evolutions), desc="Evolving dataset", unit="evolution")
-        if num_evolutions > 1
-        else range(num_evolutions)
-    )
-    all_evolutions = [instructions]
-    for _ in pbar:
-        evolved_instructions = evolve_instructions(
-            instructions=all_evolutions[-1],
-            model=vllm_model,
-            rewriter_prompt_path=rewriter_prompt_path,
-            creator_prompt_path=creator_prompt_path,
-        )
-        all_evolutions.append(evolved_instructions)
-
-    # Save the evolved dataset
+    # Set up the output path
     evolution_path = dataset_path.with_name(
         re.sub(r"\..+", "", dataset_path.stem) + ".evolved.jsonl"
     )
-    with evolution_path.open("w", encoding="utf-8") as f:
-        entire_dataset = [
-            instruction for evolution in all_evolutions for instruction in evolution
+    evolution_path.parent.mkdir(parents=True, exist_ok=True)
+    evolution_path.touch(exist_ok=True)
+
+    # Remove the samples that have already been corrected
+    if evolution_path.exists():
+        with evolution_path.open() as f:
+            evolved_instructions = [
+                InstructionSample.model_validate_json(line.strip())
+                for line in f
+                if line.strip()
+            ]
+            logger.info(
+                f"Found {len(evolved_instructions):,} instructions that have already "
+                f"been evolved in {evolution_path.as_posix()!r}"
+            )
+        instructions = [
+            instruction
+            for instruction in instructions
+            if instruction not in evolved_instructions
         ]
-        random.shuffle(entire_dataset)
-        for instruction in entire_dataset:
-            f.write(instruction.model_dump_json() + "\n")
-    logger.info(
-        f"Saved {len(entire_dataset):,} evolved instructions to {evolution_path!r}."
-    )
+
+    for evolved_instruction, evolution in evolve_instructions(
+        instructions=instructions,
+        model_id=model,
+        rewriter_prompt_path=Path(rewriter_prompt_path),
+        creator_prompt_path=Path(creator_prompt_path),
+        num_evolutions=num_evolutions,
+        batch_size=batch_size,
+    ):
+        with evolution_path.open("a", encoding="utf-8") as f:
+            f.write(
+                json.dumps(evolved_instruction.model_dump() | dict(evolution=evolution))
+                + "\n"
+            )
 
 
 if __name__ == "__main__":
