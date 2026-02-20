@@ -16,6 +16,7 @@ from pathlib import Path
 
 import click
 import more_itertools as mit
+from tqdm.auto import tqdm
 
 from laerebogen.correction import correct_grammar_in_instructions
 from laerebogen.data_models import InstructionSample
@@ -116,8 +117,17 @@ def main(
             if instruction not in corrected_instructions
         ]
 
+    num_batches = len(instructions) // batch_size
+    if len(instructions) % batch_size:
+        num_batches += 1
+
     # Correct the grammar in the instructions and save the corrected instructions
-    for batch in mit.chunked(iterable=instructions, n=batch_size):
+    for batch in tqdm(
+        iterable=mit.chunked(iterable=instructions, n=batch_size),
+        desc="Correcting grammar",
+        total=num_batches,
+        unit="batch",
+    ):
         corrected_instructions = correct_grammar_in_instructions(
             instructions=batch, prompt_path=prompt_path, model_id=model
         )
