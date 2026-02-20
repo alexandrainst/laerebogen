@@ -113,6 +113,7 @@ def main(
     follow_up_path.touch(exist_ok=True)
 
     # Remove the samples that have already been corrected
+    conversations_with_follow_ups: list[Conversation] = []
     if follow_up_path.exists():
         with follow_up_path.open() as f:
             conversations_with_follow_ups = [
@@ -124,17 +125,13 @@ def main(
                 f"Found {len(conversations_with_follow_ups):,} conversations that "
                 f"already have follow-ups in {follow_up_path.as_posix()!r}"
             )
-        conversations = [
-            conversation
-            for conversation in conversations
-            if conversation not in conversations_with_follow_ups
-        ]
 
-    if not conversations:
+    if len(conversations) == len(conversations_with_follow_ups):
         return
 
     for conversation_with_follow_ups in add_follow_up_to_conversations(
         conversations=conversations,
+        already_followed_up=conversations_with_follow_ups,
         prompt_path=prompt_path,
         model_id=model,
         num_follow_ups=num_follow_ups,

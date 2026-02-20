@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 def add_follow_up_to_conversations(
     conversations: list[Conversation],
+    already_followed_up: list[Conversation],
     prompt_path: Path,
     model_id: str,
     num_follow_ups: int,
@@ -26,6 +27,8 @@ def add_follow_up_to_conversations(
     Args:
         conversations:
             The conversations to which follow-up queries will be added.
+        already_followed_up:
+            The conversations that have already been followed up.
         prompt_path:
             Path to the prompt file containing the follow-up prompt.
         model_id:
@@ -57,7 +60,10 @@ def add_follow_up_to_conversations(
         for _ in range(num_follow_ups):
             prompts = [
                 follow_up_prompt.format(conversation=conversation.model_dump_json())
-                for conversation in batch
+                for conversation in tqdm(
+                    iterable=batch, desc="Generating follow-up queries"
+                )
+                if conversation not in already_followed_up
             ]
             responses = generate_text_with_vllm(
                 prompts=prompts,
