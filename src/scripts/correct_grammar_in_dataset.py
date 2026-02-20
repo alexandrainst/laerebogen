@@ -109,6 +109,10 @@ def main(
                 for line in f
                 if line.strip()
             ]
+            logger.info(
+                f"Found {len(corrected_instructions):,} already corrected instructions "
+                f"in {corrected_path.as_posix()!r}"
+            )
         instructions = [
             instruction
             for instruction in instructions
