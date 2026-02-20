@@ -65,8 +65,6 @@ def generate_instruction_following_data(
         batch_size:
             Number of requests to send to the model at once.
     """
-    model = load_vllm_model(model_id=model_id)
-
     with instruction_generation_prompt_path.open() as f:
         instruction_generation_prompt = f.read()
     with output_generation_prompt_path.open() as f:
@@ -101,6 +99,11 @@ def generate_instruction_following_data(
         logger.info(
             f"Loaded {len(machine_instruction_data):,} machine-generated instructions."
         )
+
+    if len(machine_instruction_data) >= num_instructions_to_generate:
+        return
+
+    model = load_vllm_model(model_id=model_id)
 
     # Initialise the progress bar
     progress_bar = tqdm(

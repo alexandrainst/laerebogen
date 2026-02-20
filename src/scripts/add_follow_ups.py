@@ -130,6 +130,9 @@ def main(
             if conversation not in conversations_with_follow_ups
         ]
 
+    if not conversations:
+        return
+
     for conversation_with_follow_ups in add_follow_up_to_conversations(
         conversations=conversations,
         prompt_path=prompt_path,

@@ -119,6 +119,9 @@ def main(
             if instruction not in corrected_instructions
         ]
 
+    if not instructions:
+        return
+
     for corrected_instruction in correct_instructions(
         instructions=instructions,
         prompt_path=prompt_path,

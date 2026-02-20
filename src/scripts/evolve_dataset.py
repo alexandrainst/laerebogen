@@ -138,6 +138,9 @@ def main(
             if instruction not in evolved_instructions
         ]
 
+    if not instructions:
+        return
+
     for evolved_instruction, evolution in evolve_instructions(
         instructions=instructions,
         model_id=model,
