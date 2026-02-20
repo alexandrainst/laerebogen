@@ -16,6 +16,7 @@ import warnings
 from pathlib import Path
 
 import click
+from tqdm.auto import tqdm
 
 from laerebogen.correction import correct_instructions
 from laerebogen.data_models import InstructionSample
@@ -115,7 +116,9 @@ def main(
             )
         instructions = [
             instruction
-            for instruction in instructions
+            for instruction in tqdm(
+                iterable=instructions, desc="Removing already corrected instructions"
+            )
             if instruction not in corrected_instructions
         ]
 
