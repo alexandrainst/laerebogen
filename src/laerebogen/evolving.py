@@ -45,6 +45,7 @@ FORMATS = ["JSON", "YAML", "Markdown", "Python"]
 
 def evolve_instructions(
     instructions: list[InstructionSample],
+    already_evolved: list[InstructionSample],
     model_id: str,
     rewriter_prompt_path: Path,
     creator_prompt_path: Path,
@@ -56,6 +57,8 @@ def evolve_instructions(
     Args:
         instructions:
             The instructions to evolve.
+        already_evolved:
+            The instructions that have already been evolved.
         model_id:
             The ID of the instruction-tuned large language model to use for evolution.
         rewriter_prompt_path:
@@ -72,6 +75,8 @@ def evolve_instructions(
         evolution is the current evolution iteration.
     """
     for instruction in instructions:
+        if instruction in already_evolved:
+            continue
         yield instruction, 0
 
     with rewriter_prompt_path.open() as f:
@@ -94,50 +99,47 @@ def evolve_instructions(
         if num_evolutions > 1
         else range(1, 1 + num_evolutions)
     )
+
     for evolution in pbar:
-        yield from evolve_single_iteration(
+        evolved_instructions: list[InstructionSample] = []
+        for evolved_instruction in evolve_single_iteration(
             instructions=instructions,
+            already_evolved=already_evolved,
             prompt_templates=prompt_templates,
             model=model,
             batch_size=batch_size,
-            evolution=evolution,
-        )
+        ):
+            evolved_instructions.append(evolved_instruction)
+            yield evolved_instruction, evolution
+        instructions = evolved_instructions
 
 
 def evolve_single_iteration(
     instructions: list[InstructionSample],
+    already_evolved: list[InstructionSample],
     prompt_templates: list[str],
     model: "LLM",
     batch_size: int,
-    evolution: int,
-) -> c.Generator[tuple[InstructionSample, int], None, None]:
+) -> c.Generator[InstructionSample, None, None]:
     """Evolve a single iteration of the dataset.
 
     Args:
         instructions:
             The instructions to evolve.
+        already_evolved:
+            The instructions that have already been evolved.
         prompt_templates:
             The prompt templates to use for evolution.
         model:
             The instruction-tuned large language model to use for evolution.
         batch_size:
             The batch size to use for evolution.
-        evolution:
-            The current evolution iteration.
 
     Yields:
-        Pairs (instruction, evolution) where instruction is the evolved instruction
-        and evolution is the current evolution iteration.
+        The evolved instructions.
     """
-    prompts = [
-        random.choice(prompt_templates)
-        .replace("{format}", random.choice(FORMATS))
-        .format(instruction=instruction.model_dump_json())
-        for instruction in instructions
-    ]
-
-    num_batches = len(prompts) // batch_size
-    if len(prompts) % batch_size:
+    num_batches = len(instructions) // batch_size
+    if len(instructions) % batch_size:
         num_batches += 1
 
     for batch in tqdm(
@@ -146,8 +148,16 @@ def evolve_single_iteration(
         total=num_batches,
         unit="batch",
     ):
+        prompts = [
+            random.choice(prompt_templates)
+            .replace("{format}", random.choice(FORMATS))
+            .format(instruction=instruction.model_dump_json())
+            for instruction in tqdm(iterable=batch, desc="Generating prompts")
+            if instruction not in already_evolved
+        ]
+
         responses = generate_text_with_vllm(
-            prompts=batch,
+            prompts=prompts,
             model=model,
             apply_chat_template=True,
             response_format=InstructionSample,
@@ -159,6 +169,6 @@ def evolve_single_iteration(
                 evolved_instruction = InstructionSample.model_validate_json(
                     json_data=response.completion
                 )
-                yield evolved_instruction, evolution
+                yield evolved_instruction
             except ValidationError:
                 continue

@@ -126,6 +126,7 @@ def main(
     evolution_path.touch(exist_ok=True)
 
     # Remove the samples that have already been corrected
+    evolved_instructions: list[InstructionSample] = []
     if evolution_path.exists():
         with evolution_path.open() as f:
             evolved_instructions = [
@@ -137,17 +138,13 @@ def main(
                 f"Found {len(evolved_instructions):,} instructions that have already "
                 f"been evolved in {evolution_path.as_posix()!r}"
             )
-        instructions = [
-            instruction
-            for instruction in instructions
-            if instruction not in evolved_instructions
-        ]
 
-    if not instructions:
+    if len(instructions) == len(evolved_instructions):
         return
 
     for evolved_instruction, evolution in evolve_instructions(
         instructions=instructions,
+        already_evolved=evolved_instructions,
         model_id=model,
         rewriter_prompt_path=rewriter_prompt_path,
         creator_prompt_path=creator_prompt_path,
