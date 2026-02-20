@@ -103,7 +103,7 @@ def main(
 
     # Remove the samples that have already been corrected
     if corrected_path.exists():
-        with corrected_path.open("r", encoding="utf-8") as f:
+        with corrected_path.open() as f:
             corrected_instructions = [
                 InstructionSample.model_validate_json(line.strip())
                 for line in f
@@ -130,6 +130,7 @@ def main(
         model_id=model,
         batch_size=batch_size,
     ):
+        breakpoint()
         with corrected_path.open("a", encoding="utf-8") as f:
             for instruction in corrected_instructions:
                 f.write(instruction.model_dump_json() + "\n")
