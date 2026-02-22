@@ -48,11 +48,11 @@ def correct_instructions(
     if len(instructions) % batch_size:
         num_batches += 1
 
-    logger.info("Correcting grammar in instructions...")
+    logger.info("Correcting instructions...")
 
     for batch in tqdm(
         iterable=mit.chunked(iterable=instructions, n=batch_size),
-        desc="Correcting grammar",
+        desc="Correcting instructions",
         total=num_batches,
         unit="batch",
     ):
