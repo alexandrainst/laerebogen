@@ -139,7 +139,8 @@ def main(
                 f"been evolved in {evolution_path.as_posix()!r}"
             )
 
-    if len(instructions) == len(evolved_instructions):
+    # If we're >99% done, we're done
+    if len(evolved_instructions) > 0.99 * len(instructions):
         return
 
     for evolved_instruction, evolution in evolve_instructions(

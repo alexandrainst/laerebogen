@@ -115,7 +115,8 @@ def main(
                 f"in {corrected_path.as_posix()!r}"
             )
 
-    if len(instructions) == len(corrected_instructions):
+    # If we're >99% done, we're done
+    if len(corrected_instructions) > 0.99 * len(instructions):
         return
 
     for corrected_instruction in correct_instructions(

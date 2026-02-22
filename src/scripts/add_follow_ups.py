@@ -126,7 +126,8 @@ def main(
                 f"already have follow-ups in {follow_up_path.as_posix()!r}"
             )
 
-    if len(conversations) == len(conversations_with_follow_ups):
+    # If we're >99% done, we're done
+    if len(conversations_with_follow_ups) > 0.99 * len(conversations):
         return
 
     for conversation_with_follow_ups in add_follow_up_to_conversations(
