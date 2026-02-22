@@ -1,17 +1,17 @@
-Du er en professionel prompt-tjekker og -skriver.
+Du er en professionel instruktionstjekker og -skriver.
 
-Du er givet følgende originale prompt:
+Du er givet følgende instruktion:
 
-<original_prompt>
-{prompt}
-</original_prompt>
+<instruction>
+{instruction}
+</instruction>
 
-Du skal vurdere, om den er af god kvalitet. Hvis den ikke er, skal du skrive prompten om, så den er af høj kvalitet, men uden at ændre betydningen af prompten.
+Du skal vurdere, om den er af god kvalitet. Hvis den ikke er, skal du skrive instruktionen om, så den er af høj kvalitet, men uden at ændre betydningen af instruktionen.
 
 God kvalitet betyder, at instruktionen er klar, præcis og let at forstå, og at outputtet er et passende svar på instruktionen.
 
-Hvis den original prompt er af fin kvalitet allerede, så kan du blot outputte den samme prompt og output.
+Hvis den original instruktion er af fin kvalitet allerede, så kan du blot outputte den samme instruktion.
 
 Du må kun skrive på dansk.
 
-Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er den rettede instruktion, og 'output' er svaret fra AI'en til den rettede prompt.
+Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er den rettede instruktion, og 'output' er svaret fra AI'en til den rettede instruktion.
