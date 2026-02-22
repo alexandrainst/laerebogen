@@ -139,8 +139,10 @@ def main(
                 f"been evolved in {evolution_path.as_posix()!r}"
             )
 
-    # If we're >99% done, we're done
-    if len(evolved_instructions) > 0.99 * len(instructions):
+    # If we're >99% done, we're done. The multiplication with (1 + num_evolutions) is
+    # because the evolved dataset will be 1 + num_evolutions times larger than the
+    # original dataset, as we're adding each evolution to the original dataset
+    if len(evolved_instructions) > 0.99 * (1 + num_evolutions) * len(instructions):
         return
 
     for evolved_instruction, evolution in evolve_instructions(
