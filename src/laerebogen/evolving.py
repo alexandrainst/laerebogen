@@ -152,7 +152,9 @@ def evolve_single_iteration(
             random.choice(prompt_templates)
             .replace("{format}", random.choice(FORMATS))
             .format(instruction=instruction.model_dump_json())
-            for instruction in tqdm(iterable=batch, desc="Generating prompts")
+            for instruction in tqdm(
+                iterable=batch, desc="Generating prompts", leave=False
+            )
             if instruction not in already_evolved
         ]
 
@@ -170,5 +172,8 @@ def evolve_single_iteration(
                     json_data=response.completion
                 )
                 yield evolved_instruction
-            except ValidationError:
+            except ValidationError as e:
+                logger.warning(
+                    f"Failed to validate evolved instruction: {e}. Skipping."
+                )
                 continue

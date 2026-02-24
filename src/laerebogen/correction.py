@@ -79,5 +79,5 @@ def correct_instructions(
                 )
                 yield corrected_instruction
             except ValidationError as e:
-                logger.warning(f"Error while correcting instruction: {e}")
+                logger.warning(f"Error while correcting instruction: {e}. Skipping.")
                 continue

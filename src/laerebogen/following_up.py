@@ -78,7 +78,11 @@ def add_follow_up_to_conversations(
                     new_query = InstructionSample.model_validate_json(
                         json_data=response.completion
                     )
-                except ValidationError:
+                except ValidationError as e:
+                    logger.warning(
+                        f"Failed to validate response for conversation {conversation}: "
+                        f"{e}. Skipping."
+                    )
                     continue
                 conversation.add_message(
                     role="user", content=new_query.instruction.strip()
