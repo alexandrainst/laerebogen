@@ -33,7 +33,7 @@ logger = logging.getLogger("push_to_hub")
     default=False,
     help="Set the dataset as the default dataset for the repository.",
 )
-def main(data_path: Path, repo_id: str, public: bool, set_default: bool) -> None:
+def main(data_path: Path, repo_id: str, public: bool, default: bool) -> None:
     """Push the dataset to the Hugging Face Hub."""
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path.as_posix(), split="train")
@@ -52,7 +52,7 @@ def main(data_path: Path, repo_id: str, public: bool, set_default: bool) -> None
     else:
         pass
     dataset.push_to_hub(
-        repo_id, config_name="default", private=not public, set_default=set_default
+        repo_id, config_name="default", private=not public, set_default=default
     )
     logger.info(f"Dataset pushed to {repo_id!r} successfully.")
 
