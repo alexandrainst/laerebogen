@@ -1,7 +1,7 @@
 """Push the dataset to the Hugging Face Hub.
 
 Usage:
-    python push_to_hub.py JSONL_DATA_PATH REPO_ID[::SUBSET] [--public] [--default]
+    python push_to_hub.py JSONL_DATA_PATH REPO_ID[::SUBSET] [--public]
 """
 
 import logging
@@ -27,13 +27,7 @@ logger = logging.getLogger("push_to_hub")
     default=False,
     help="Push the dataset to the Hugging Face Hub as a public dataset.",
 )
-@click.option(
-    "--default",
-    is_flag=True,
-    default=False,
-    help="Set the dataset as the default dataset for the repository.",
-)
-def main(data_path: Path, repo_id: str, public: bool, default: bool) -> None:
+def main(data_path: Path, repo_id: str, public: bool) -> None:
     """Push the dataset to the Hugging Face Hub."""
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path.as_posix(), split="train")
@@ -51,9 +45,7 @@ def main(data_path: Path, repo_id: str, public: bool, default: bool) -> None:
         repo_id, subset = repo_id.split("::")
     else:
         subset = "default"
-    dataset.push_to_hub(
-        repo_id, config_name=subset, private=not public, set_default=default
-    )
+    dataset.push_to_hub(repo_id, config_name=subset, private=not public)
     logger.info(f"Dataset pushed to {repo_id!r} successfully.")
 
 
