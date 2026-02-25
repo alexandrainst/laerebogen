@@ -144,7 +144,7 @@ def evolve_single_iteration(
 
     for batch in tqdm(
         iterable=mit.chunked(iterable=instructions, n=batch_size),
-        desc="Correcting grammar",
+        desc="Evolving batches",
         total=num_batches,
         unit="batch",
     ):
