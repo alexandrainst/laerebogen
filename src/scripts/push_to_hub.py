@@ -1,7 +1,7 @@
 """Push the dataset to the Hugging Face Hub.
 
 Usage:
-    python push_to_hub.py JSONL_DATA_PATH REPO_ID[::SUBSET] [--public]
+    python push_to_hub.py JSONL_DATA_PATH REPO_ID[::SUBSET] [--public] [--default]
 """
 
 import logging
@@ -18,23 +18,22 @@ logger = logging.getLogger("push_to_hub")
 
 @click.command()
 @click.argument(
-    "data_path",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path, readable=True),
-    help="The path to the JSONL dataset.",
+    "data_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
 )
-@click.argument(
-    "repo_id",
-    type=str,
-    help="The repository ID on the Hugging Face Hub. Include the subset by separating "
-    "with double colons ('::'), e.g. 'username/repo::subset'.",
-)
+@click.argument("repo_id", type=str)
 @click.option(
     "--public",
     is_flag=True,
     default=False,
     help="Push the dataset to the Hugging Face Hub as a public dataset.",
 )
-def main(data_path: Path, repo_id: str, public: bool) -> None:
+@click.option(
+    "--default",
+    is_flag=True,
+    default=False,
+    help="Set the dataset as the default dataset for the repository.",
+)
+def main(data_path: Path, repo_id: str, public: bool, set_default: bool) -> None:
     """Push the dataset to the Hugging Face Hub."""
     logger.info(f"Loading dataset from {data_path}...")
     dataset = load_dataset("json", data_files=data_path.as_posix(), split="train")
@@ -52,7 +51,9 @@ def main(data_path: Path, repo_id: str, public: bool) -> None:
         repo_id, subset = repo_id.split("::")
     else:
         pass
-    dataset.push_to_hub(repo_id, config_name="default", private=not public)
+    dataset.push_to_hub(
+        repo_id, config_name="default", private=not public, set_default=set_default
+    )
     logger.info(f"Dataset pushed to {repo_id!r} successfully.")
 
 
