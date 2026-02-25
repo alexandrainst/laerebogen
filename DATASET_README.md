@@ -8,6 +8,60 @@ language:
 - da
 size_categories:
 - 1M<n<10M
+dataset_info:
+- config_name: base
+  features:
+  - name: instruction
+    dtype: string
+  - name: output
+    dtype: string
+  splits:
+  - name: train
+    num_bytes: 1047470220
+    num_examples: 1005163
+  download_size: 656907545
+  dataset_size: 1047470220
+- config_name: grammar_corrected
+  features:
+  - name: instruction
+    dtype: string
+  - name: output
+    dtype: string
+  - name: hash
+    dtype: string
+  splits:
+  - name: train
+    num_bytes: 624398370
+    num_examples: 1002111
+  download_size: 406049978
+  dataset_size: 624398370
+- config_name: quality_corrected
+  features:
+  - name: instruction
+    dtype: string
+  - name: output
+    dtype: string
+  - name: hash
+    dtype: string
+  splits:
+  - name: train
+    num_bytes: 779474387
+    num_examples: 999588
+  download_size: 499250083
+  dataset_size: 779474387
+configs:
+- config_name: base
+  data_files:
+  - split: train
+    path: base/train-*
+- config_name: grammar_corrected
+  data_files:
+  - split: train
+    path: grammar_corrected/train-*
+- config_name: quality_corrected
+  data_files:
+  - split: train
+    path: quality_corrected/train-*
 ---
 
 # Lærebogen
