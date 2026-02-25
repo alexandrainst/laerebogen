@@ -29,11 +29,15 @@ help:
 dataset: ## Generate the dataset
 	@echo "Generating the dataset..."
 	@uv run src/scripts/generate_base_dataset.py && \
+		uv run src/scripts/push_to_hub.py data/dataset.jsonl danish-foundation-models/laerebogen::base \
 		uv run src/scripts/correct_grammar_in_dataset.py && \
+		uv run src/scripts/push_to_hub.py data/dataset.grammar_corrected.jsonl danish-foundation-models/laerebogen::grammar_corrected \
 		uv run src/scripts/correct_quality_in_dataset.py && \
+		uv run src/scripts/push_to_hub.py data/dataset.quality_corrected.jsonl danish-foundation-models/laerebogen::quality_corrected \
 		uv run src/scripts/evolve_dataset.py && \
+		uv run src/scripts/push_to_hub.py data/dataset.evolved.jsonl danish-foundation-models/laerebogen::evolved \
 		uv run src/scripts/add_follow_ups.py && \
-		uv run src/scripts/push_to_hub.py
+		uv run src/scripts/push_to_hub.py data/dataset.follow_ups_added.jsonl danish-foundation-models/laerebogen::with_follow_ups --default
 	@echo "Dataset generated successfully!"
 
 install: ## Install dependencies
