@@ -50,9 +50,9 @@ def main(data_path: Path, repo_id: str, public: bool, default: bool) -> None:
     if "::" in repo_id:
         repo_id, subset = repo_id.split("::")
     else:
-        pass
+        subset = "default"
     dataset.push_to_hub(
-        repo_id, config_name="default", private=not public, set_default=default
+        repo_id, config_name=subset, private=not public, set_default=default
     )
     logger.info(f"Dataset pushed to {repo_id!r} successfully.")
 
