@@ -61,7 +61,7 @@ def add_follow_up_to_conversations(
             prompts = [
                 follow_up_prompt.format(conversation=conversation.model_dump_json())
                 for conversation in tqdm(
-                    iterable=batch, desc="Generating follow-up queries"
+                    iterable=batch, desc="Generating follow-up queries", leave=False
                 )
                 if conversation not in already_followed_up
             ]
