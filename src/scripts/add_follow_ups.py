@@ -10,6 +10,7 @@ Usage:
         [--verbose]
 """
 
+import json
 import logging
 import os
 import re
@@ -18,7 +19,7 @@ from pathlib import Path
 
 import click
 
-from laerebogen.data_models import Conversation
+from laerebogen.data_models import Conversation, InstructionSample
 from laerebogen.following_up import add_follow_up_to_conversations
 
 
@@ -101,13 +102,29 @@ def main(
     if not dataset_path.exists():
         raise FileNotFoundError(f"Dataset file not found: {dataset_path.as_posix()!r}")
     with dataset_path.open("r", encoding="utf-8") as f:
-        conversations = [
-            Conversation.model_validate_json(line.strip()) for line in f if line.strip()
+        raw_instructions = [json.loads(line.strip()) for line in f if line.strip()]
+        for raw_instruction in raw_instructions:
+            raw_instruction.pop("evolution", None)
+
+        instructions = [
+            InstructionSample.model_validate(raw_instruction)
+            for raw_instruction in raw_instructions
         ]
+
+        conversations = [
+            Conversation(
+                messages=[
+                    dict(role="user", content=instruction.instruction),
+                    dict(role="assistant", content=instruction.output),
+                ]
+            )
+            for instruction in instructions
+        ]
+        logger.info(f"Loaded {len(conversations):,} conversations.")
 
     # Set up the output path
     follow_up_path = dataset_path.with_name(
-        re.sub(r"\..+", "", dataset_path.stem) + ".evolved.jsonl"
+        re.sub(r"\..+", "", dataset_path.stem) + ".with_follow_ups.jsonl"
     )
     follow_up_path.parent.mkdir(parents=True, exist_ok=True)
     follow_up_path.touch(exist_ok=True)
