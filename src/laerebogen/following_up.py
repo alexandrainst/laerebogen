@@ -56,7 +56,6 @@ def add_follow_up_to_conversations(
         total=num_batches,
         unit="batch",
     ):
-        extended_conversations: list[Conversation] = list()
         for _ in range(num_follow_ups):
             prompts = [
                 follow_up_prompt.format(conversation=conversation.model_dump_json())
@@ -71,7 +70,7 @@ def add_follow_up_to_conversations(
                 apply_chat_template=True,
                 response_format=InstructionSample,
             )
-            for conversation, response in zip(conversations, responses):
+            for conversation, response in zip(batch, responses):
                 if response.done_reason != "stop":
                     continue
                 try:
@@ -91,4 +90,4 @@ def add_follow_up_to_conversations(
                     role="assistant", content=new_query.output.strip()
                 )
 
-        yield from extended_conversations
+        yield from batch
