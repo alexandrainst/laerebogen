@@ -18,6 +18,7 @@ import warnings
 from pathlib import Path
 
 import click
+from pydantic import ValidationError
 
 from laerebogen.data_models import Conversation, InstructionSample
 from laerebogen.following_up import add_follow_up_to_conversations
@@ -106,10 +107,13 @@ def main(
         for raw_instruction in raw_instructions:
             raw_instruction.pop("evolution", None)
 
-        instructions = [
-            InstructionSample.model_validate(raw_instruction)
-            for raw_instruction in raw_instructions
-        ]
+        instructions: list[InstructionSample] = list()
+        for raw_instruction in raw_instructions:
+            try:
+                instruction = InstructionSample.model_validate(raw_instruction)
+                instructions.append(instruction)
+            except ValidationError:
+                pass
 
         conversations = [
             Conversation(
@@ -133,11 +137,15 @@ def main(
     conversations_with_follow_ups: list[Conversation] = []
     if follow_up_path.exists():
         with follow_up_path.open() as f:
-            conversations_with_follow_ups = [
-                Conversation.model_validate_json(line.strip())
-                for line in f
-                if line.strip()
-            ]
+            conversations_with_follow_ups: list[Conversation] = list()
+            for line in f:
+                if not line.strip():
+                    continue
+                try:
+                    conversation = Conversation.model_validate_json(line.strip())
+                    conversations_with_follow_ups.append(conversation)
+                except ValidationError:
+                    pass
             logger.info(
                 f"Found {len(conversations_with_follow_ups):,} conversations that "
                 f"already have follow-ups in {follow_up_path.as_posix()!r}"
