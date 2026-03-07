@@ -9,11 +9,30 @@ from pydantic import AfterValidator, BaseModel, Field
 from .constants import NUM_PROMPT_INSTRUCTIONS
 
 
+def raise_if_stripped_is_empty(string: str) -> str:
+    """Raise an error if the string is empty after stripping.
+
+    Args:
+        string:
+            The string to check.
+
+    Returns:
+        The string.
+
+    Raises:
+        ValueError:
+            If the string is empty after stripping.
+    """
+    if len(string.strip()) == 0:
+        raise ValueError(f"String {string!r} is empty after stripping")
+    return string
+
+
 class Message(BaseModel):
     """A message in a conversation between a user and an LLM."""
 
     role: t.Literal["user", "assistant"]
-    content: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
+    content: t.Annotated[str, AfterValidator(raise_if_stripped_is_empty)]
     hash: str | None = None
 
     def model_post_init(self, __context: None) -> None:
@@ -108,7 +127,7 @@ class InstructionSample(BaseModel):
     """
 
     instruction: t.Annotated[str, Field(min_length=10, max_length=5000)]
-    output: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
+    output: t.Annotated[str, AfterValidator(raise_if_stripped_is_empty)]
     hash: str | None = None
 
     def model_post_init(self, __context: None) -> None:
@@ -151,7 +170,7 @@ class InstructionOutput(BaseModel):
             The expected output of the instruction.
     """
 
-    output: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
+    output: t.Annotated[str, AfterValidator(raise_if_stripped_is_empty)]
 
 
 class InstructionInputSamples(BaseModel):
