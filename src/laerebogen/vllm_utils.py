@@ -61,6 +61,8 @@ def generate_text_with_vllm(
                 [dict(role="user", content=prompt)],
                 add_generation_prompt=True,
                 tokenize=False,
+                truncation=True,
+                max_length=MAX_CONTEXT_LENGTH,
             )
             for prompt in tqdm(
                 iterable=prompts,
