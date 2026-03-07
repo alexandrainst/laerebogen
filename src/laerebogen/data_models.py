@@ -4,7 +4,7 @@ import hashlib
 import typing as t
 from dataclasses import dataclass
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
 
 from .constants import NUM_PROMPT_INSTRUCTIONS
 
@@ -13,7 +13,7 @@ class Message(BaseModel):
     """A message in a conversation between a user and an LLM."""
 
     role: t.Literal["user", "assistant"]
-    content: t.Annotated[str, Field(min_length=1)]
+    content: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
     hash: str | None = None
 
     def model_post_init(self, __context: None) -> None:
@@ -108,7 +108,7 @@ class InstructionSample(BaseModel):
     """
 
     instruction: t.Annotated[str, Field(min_length=10, max_length=5000)]
-    output: t.Annotated[str, Field(min_length=1)]
+    output: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
     hash: str | None = None
 
     def model_post_init(self, __context: None) -> None:
@@ -151,7 +151,7 @@ class InstructionOutput(BaseModel):
             The expected output of the instruction.
     """
 
-    output: t.Annotated[str, Field(min_length=1)]
+    output: t.Annotated[str, AfterValidator(lambda x: len(x.strip()) > 0)]
 
 
 class InstructionInputSamples(BaseModel):
