@@ -60,7 +60,7 @@ def generate_text_with_vllm(
             tokenizer.apply_chat_template(  # type: ignore[misc]
                 [dict(role="user", content=prompt)],
                 add_generation_prompt=True,
-                tokenize=False,
+                tokenize=True,
                 truncation=True,
                 max_length=MAX_CONTEXT_LENGTH,
             )
