@@ -10,6 +10,7 @@ import torch
 import transformers.utils.logging as transformers_logging
 from pydantic import BaseModel
 from tqdm.auto import tqdm
+from vllm import TokensPrompt
 from vllm.sampling_params import StructuredOutputsParams
 
 from .constants import MAX_CONTEXT_LENGTH, TEMPERATURE
@@ -57,12 +58,14 @@ def generate_text_with_vllm(
     if apply_chat_template:
         tokenizer = model.get_tokenizer()
         prompts = [
-            tokenizer.apply_chat_template(  # type: ignore[misc]
-                [dict(role="user", content=prompt)],
-                add_generation_prompt=True,
-                tokenize=True,
-                truncation=True,
-                max_length=MAX_CONTEXT_LENGTH,
+            TokensPrompt(  # pyrefly: ignore[no-matching-overload]
+                prompt_token_ids=tokenizer.apply_chat_template(
+                    [dict(role="user", content=prompt)],
+                    add_generation_prompt=True,
+                    tokenize=True,
+                    truncation=True,
+                    max_length=MAX_CONTEXT_LENGTH,
+                )
             )
             for prompt in tqdm(
                 iterable=prompts,
