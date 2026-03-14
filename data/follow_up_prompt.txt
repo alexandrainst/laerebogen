@@ -12,6 +12,7 @@ Du opfører dig som en bruger, så du behøver ikke være høflig eller formel, 
 
 Du må kun skrive på dansk.
 
-Til sidst skal du være sprogmodellen og svare på den nye prompt.
+Til sidst skal du være sprogmodellen og svare på den nye prompt. Dette svar må ikke være
+tomt.
 
 Du skal outputte et JSON-objekt med nøglerne 'instruction' og 'output', hvor 'instruction' værdien er din nye prompt, og 'output' er svaret fra AI'en til den nye prompt.
