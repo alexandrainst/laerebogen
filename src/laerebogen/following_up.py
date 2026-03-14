@@ -79,8 +79,8 @@ def add_follow_up_to_conversations(
                     )
                 except ValidationError as e:
                     logger.warning(
-                        f"Failed to validate response for conversation {conversation}: "
-                        f"{e}. Skipping."
+                        "Failed to validate response for the new query "
+                        f"{response.completion}. The error was {e}. Skipping."
                     )
                     continue
                 conversation.add_message(
