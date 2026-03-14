@@ -61,7 +61,7 @@ from laerebogen.following_up import add_follow_up_to_conversations
 @click.option(
     "--batch-size",
     type=int,
-    default=8_192,
+    default=32_768,
     show_default=True,
     help="Number of samples to process with the LLM at the same time.",
 )
