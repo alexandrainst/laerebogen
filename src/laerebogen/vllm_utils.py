@@ -64,7 +64,7 @@ def generate_text_with_vllm(
                     add_generation_prompt=True,
                     tokenize=True,
                     truncation=True,
-                    max_length=MAX_CONTEXT_LENGTH,
+                    max_length=MAX_CONTEXT_LENGTH + 100,
                 )
             )
             for prompt in tqdm(
