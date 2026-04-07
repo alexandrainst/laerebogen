@@ -70,7 +70,7 @@ def generate_text_with_vllm(
                     tokenize=True,
                     truncation=True,
                     max_length=MAX_CONTEXT_LENGTH + 100,
-                )
+                )["input_ids"]
             )
             for prompt in tqdm(
                 iterable=prompts,
