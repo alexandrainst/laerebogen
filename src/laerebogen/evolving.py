@@ -8,6 +8,7 @@ complicated and diverse.
 """
 
 import collections.abc as c
+import importlib.util
 import logging
 import random
 import typing as t
@@ -20,8 +21,8 @@ from tqdm.auto import tqdm
 from .data_models import InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
-if t.TYPE_CHECKING:
-    from vllm import LLM
+if importlib.util.find_spec("vllm") is not None and t.TYPE_CHECKING:
+    from vllm import LLM  # pyrefly: ignore[missing-import]
 
 logger = logging.getLogger(__name__)
 

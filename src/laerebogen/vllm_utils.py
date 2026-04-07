@@ -10,14 +10,19 @@ import torch
 import transformers.utils.logging as transformers_logging
 from pydantic import BaseModel
 from tqdm.auto import tqdm
-from vllm import TokensPrompt
-from vllm.sampling_params import StructuredOutputsParams
 
 from .constants import MAX_CONTEXT_LENGTH, TEMPERATURE
 from .data_models import Response
 
-if importlib.util.find_spec("vllm") is not None or t.TYPE_CHECKING:
-    from vllm import LLM, SamplingParams
+if importlib.util.find_spec("vllm") is not None and t.TYPE_CHECKING:
+    from vllm import (  # pyrefly: ignore[missing-import]
+        LLM,
+        SamplingParams,
+        TokensPrompt,
+    )
+    from vllm.sampling_params import (  # pyrefly: ignore[missing-import]
+        StructuredOutputsParams,
+    )
 
 
 logger = logging.getLogger(__name__)
@@ -129,9 +134,8 @@ def load_vllm_model(model_id: str) -> "LLM":
         tokenizer=model_id,
         gpu_memory_utilization=0.9,
         max_model_len=MAX_CONTEXT_LENGTH,
-        distributed_executor_backend="ray" if torch.cuda.device_count() > 1 else "mp",
+        distributed_executor_backend="mp",
         tensor_parallel_size=torch.cuda.device_count(),
-        enforce_eager=True,
         enable_prefix_caching=True,
     )
 
