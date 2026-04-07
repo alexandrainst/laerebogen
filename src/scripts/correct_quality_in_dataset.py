@@ -43,7 +43,7 @@ from laerebogen.data_models import InstructionSample
 @click.option(
     "--model",
     type=str,
-    default="Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
+    default="google/gemma-4-31B-it",
     show_default=True,
     help="Model ID of the instruction-tuned large language model to use for evolution.",
 )

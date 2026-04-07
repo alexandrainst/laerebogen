@@ -71,11 +71,10 @@ seed prompts can be found
 With the seed prompts in hand, we used the [Alpaca
 recipe](https://github.com/tatsu-lab/stanford_alpaca) to generate an initial instruction
 dataset with 100,000 examples, based on the
-[Qwen/Qwen3-235B-A22B-Instruct-2507-FP8](https://hf.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8)
-decoder model. This used the seed prompts from the previous step as few-shot examples,
-and were filtered using filters that checked that the generated examples were not too
-short or too long, were not too similar to existing instructions, and did not contain
-prompt words.
+[google/gemma-4-31B-it](https://hf.co/google/gemma-4-31B-it) decoder model. This used
+the seed prompts from the previous step as few-shot examples, and were filtered using
+filters that checked that the generated examples were not too short or too long, were
+not too similar to existing instructions, and did not contain prompt words.
 
 ### Step 3: Grammar Correction
 
