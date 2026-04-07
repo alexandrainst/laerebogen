@@ -14,7 +14,7 @@ from tqdm.auto import tqdm
 from .constants import MAX_CONTEXT_LENGTH, TEMPERATURE
 from .data_models import Response
 
-if importlib.util.find_spec("vllm") is not None and t.TYPE_CHECKING:
+if importlib.util.find_spec("vllm") is not None:
     from vllm import (  # pyrefly: ignore[missing-import]
         LLM,
         SamplingParams,

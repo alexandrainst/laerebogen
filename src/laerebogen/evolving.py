@@ -11,7 +11,6 @@ import collections.abc as c
 import importlib.util
 import logging
 import random
-import typing as t
 from pathlib import Path
 
 import more_itertools as mit
@@ -21,7 +20,7 @@ from tqdm.auto import tqdm
 from .data_models import InstructionSample
 from .vllm_utils import generate_text_with_vllm, load_vllm_model
 
-if importlib.util.find_spec("vllm") is not None and t.TYPE_CHECKING:
+if importlib.util.find_spec("vllm") is not None:
     from vllm import LLM  # pyrefly: ignore[missing-import]
 
 logger = logging.getLogger(__name__)
