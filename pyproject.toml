@@ -23,7 +23,7 @@ dependencies = [
     "wandb>=0.21.0",
     "peft>=0.17.0",
     "nlp-dedup>=0.1.2",
-    "vllm>=0.10.0; platform_system == 'Linux'",
+    "vllm>=0.19.0; platform_system == 'Linux'",
 ]
 
 [dependency-groups]
