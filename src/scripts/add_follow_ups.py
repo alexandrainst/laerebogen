@@ -46,7 +46,7 @@ from laerebogen.following_up import add_follow_up_to_conversations
 @click.option(
     "--model",
     type=str,
-    default="google/gemma-4-31B-it",
+    default="Qwen/Qwen3-235B-A22B-Instruct-2507-FP8",
     show_default=True,
     help="Model ID of the instruction-tuned large language model used to create the "
     "follow-up queries and answers.",

@@ -103,8 +103,8 @@ All examples in the dataset are structured as follows:
 The dataset was created using several steps, each of which is described in detail in the
 subsections below. The code base used for the dataset generation can be found
 [here](https://github.com/alexandrainst/laerebogen). We used the
-[google/gemma-4-31B-it](https://hf.co/google/gemma-4-31B-it) model for all steps (except
-the manual Step 1).
+[Qwen/Qwen3-235B-A22B-Instruct-2507-FP8](https://hf.co/Qwen/Qwen3-235B-A22B-Instruct-2507-FP8)
+model for all steps (except the manual Step 1).
 
 ### Step 1: Seed Generation
 
